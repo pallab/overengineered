@@ -12,15 +12,15 @@ RUN curl -sL https://deb.nodesource.com/setup_20.x  | bash -
 RUN apt-get -y install nodejs
 
 # Create a dummy project to pull the dependencies
-RUN USER=root cargo new overengineered
+RUN USER=root cargo new webserver
 
-WORKDIR /app/overengineered
+WORKDIR /app/webserver
 
 COPY ./Cargo.toml ./
 RUN cargo build --release
 
 # pull the react dependencies as well
-WORKDIR /app/overengineered/ui
+WORKDIR /app/webserver/ui
 
 COPY ./ui/package.json ./
 RUN npm install
@@ -31,7 +31,7 @@ RUN npm run build
 
 
 # build the rust app
-WORKDIR /app/overengineered
+WORKDIR /app/webserver
 RUN pwd && ls static && ls -alth src
 
 COPY ./src ./src
@@ -46,12 +46,12 @@ FROM debian:buster-slim
 RUN apt-get update & apt-get install -y extra-runtime-dependencies & rm -rf /var/lib/apt/lists/*
 
 EXPOSE 8080
-WORKDIR /app/overengineered
+WORKDIR /app/webserver
 
-COPY --from=build /app/overengineered/target/release/overengineered ./
-COPY --from=build /app/overengineered/config.json ./
-COPY --from=build /app/overengineered/static ./static
+COPY --from=build /app/webserver/target/release/webserver ./
+COPY --from=build /app/webserver/config.json ./
+COPY --from=build /app/webserver/static ./static
 RUN pwd && ls -alth && ls static
 
 #ENV RUST_BACKTRACE=full
-CMD [ "./overengineered" ]
+CMD [ "./webserver" ]

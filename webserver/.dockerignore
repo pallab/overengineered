@@ -1,4 +1,4 @@
 ui/node_modules
 target
 static
-.idea
+../.idea
