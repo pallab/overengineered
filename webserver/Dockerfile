@@ -35,7 +35,7 @@ WORKDIR /app/webserver
 RUN pwd && ls static && ls -alth src
 
 COPY ./src ./src
-COPY ./config.json ./
+COPY config.json ./
 RUN pwd && ls && ls -alth src
 
 RUN cargo build --release
@@ -53,5 +53,6 @@ COPY --from=build /app/webserver/config.json ./
 COPY --from=build /app/webserver/static ./static
 RUN pwd && ls -alth && ls static
 
-#ENV RUST_BACKTRACE=full
+ENV RUST_BACKTRACE=full
+ENV CONFIG_FILE=config.docker.json
 CMD [ "./webserver" ]

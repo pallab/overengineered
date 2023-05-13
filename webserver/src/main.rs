@@ -16,9 +16,10 @@ struct AppState {
 async fn main() -> std::io::Result<()> {
     println!("Starting app");
 
-    let config = load_config();
+    let config_file = std::env::var("CONFIG_FILE").unwrap_or(String::from("config.json"));
+    let config = load_config(config_file);
 
-    println!("config is {}", config.name);
+    println!("config is {}", serde_json::to_string(&config).unwrap());
 
     // let app_state = web::Data::new(AppState{
     //     counter : Mutex::new(0)
@@ -31,8 +32,7 @@ async fn main() -> std::io::Result<()> {
             .service(routes::login)
             .service(Files::new("/", "./static"))
     })
-        .bind(("0.0.0.0", 8080))?
+        .bind((config.host, config.port))?
         .run()
         .await
-    // std::io::Result::Ok(())
 }
