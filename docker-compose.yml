@@ -1,0 +1,35 @@
+version: '3.3'
+
+services:
+  db:
+    image: mysql:8
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      - MYSQL_ROOT_PASSWORD=passwdroot
+      - MYSQL_DATABASE=overengineered
+      - MYSQL_USER=tenxdev
+      - MYSQL_PASSWORD=tenxpasswd
+    networks:
+      - backend
+    ports:
+      - 3306:3306
+    volumes:
+      - "./database/schema.sql:/docker-entrypoint-initdb.d/1.sql"
+      - "./database/data.sql:/docker-entrypoint-initdb.d/2.sql"
+  webserver:
+    image: webserver
+    build:
+      context: webserver
+      dockerfile: webserver/Dockerfile
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=mysql://tenxdev:tenxpasswd@127.0.0.1:3306/overengineered
+    networks:
+      - backend
+    ports:
+      - 8080:8080
+
+networks:
+  frontend:
+  backend:

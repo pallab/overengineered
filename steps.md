@@ -43,3 +43,21 @@ docker build -t overengineered . --progress=basic
 ``
 docker run -p 8080:8080  overengineered
 ``
+
+
+## Diesel
+brew install mysql-client 
+
+which will give you the location of the lib 
+then
+RUSTFLAGS="-L/opt/homebrew/opt/mysql-client/lib" cargo install diesel_cli --no-default-features --features mysql
+
+ref : https://stackoverflow.com/questions/54969208/how-to-link-mysql-client-installed-from-homebrew-with-diesel-cli
+
+diesel setup --migration-dir database/migrations --database-url mysql://tenxdev:tenxpasswd@127.0.0.1:3306/overengineered
+
+diesel migration generate create_users --migration-dir database/migrations
+
+add sql to migration files 
+
+diesel migration run --migration-dir database/migrations --database-url mysql://tenxdev:tenxpasswd@127.0.0.1:3306/overengineered
