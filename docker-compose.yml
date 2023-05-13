@@ -15,16 +15,22 @@ services:
       - 3306:3306
     volumes:
       - "./database/schema.sql:/docker-entrypoint-initdb.d/1.sql"
-      - "./database/data.sql:/docker-entrypoint-initdb.d/2.sql"
+      - "./database/data.sql:/docker-entrypoint-initdb.d/3.sql"
+    healthcheck:
+      test: mysqladmin ping -h 127.0.0.1 -u tenxdev --password=tenxpasswd
+      interval: 5s
+      timeout: 5s
+      retries: 55
   webserver:
     image: webserver
     build:
       context: webserver
-      dockerfile: webserver/Dockerfile
+      dockerfile: Dockerfile
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
-      - DATABASE_URL=mysql://tenxdev:tenxpasswd@127.0.0.1:3306/overengineered
+      - DATABASE_URL=mysql://tenxdev:tenxpasswd@db:3306/overengineered
     networks:
       - backend
     ports:

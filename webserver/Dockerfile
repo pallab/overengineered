@@ -10,6 +10,8 @@ RUN rustup target add x86_64-unknown-linux-musl
 RUN apt-get -y install curl gnupg
 RUN curl -sL https://deb.nodesource.com/setup_20.x  | bash -
 RUN apt-get -y install nodejs
+RUN apt-get -y install libmariadb3
+#RUN apt-get install libmariadb-dev
 
 # Create a dummy project to pull the dependencies
 RUN USER=root cargo new webserver
@@ -35,21 +37,25 @@ WORKDIR /app/webserver
 RUN pwd && ls static && ls -alth src
 
 COPY ./src ./src
-COPY config.json ./
+COPY config.docker.json ./
 RUN pwd && ls && ls -alth src
-
+RUN rm -r target
 RUN cargo build --release
+RUN dpkg --print-architecture
 
 # create the release build
-FROM debian:buster-slim
+FROM debian:buster
+RUN dpkg --print-architecture
+RUN apt-get update
+RUN apt-get -y install libmariadb3
+#RUN apt-get install libmariadb-dev
 
-RUN apt-get update & apt-get install -y extra-runtime-dependencies & rm -rf /var/lib/apt/lists/*
 
 EXPOSE 8080
 WORKDIR /app/webserver
 
 COPY --from=build /app/webserver/target/release/webserver ./
-COPY --from=build /app/webserver/config.json ./
+COPY --from=build /app/webserver/config.docker.json ./
 COPY --from=build /app/webserver/static ./static
 RUN pwd && ls -alth && ls static
 

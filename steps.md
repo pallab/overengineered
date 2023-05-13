@@ -61,3 +61,5 @@ diesel migration generate create_users --migration-dir database/migrations
 add sql to migration files 
 
 diesel migration run --migration-dir database/migrations --database-url mysql://tenxdev:tenxpasswd@127.0.0.1:3306/overengineered
+
+diesel print-schema --database-url mysql://tenxdev:tenxpasswd@127.0.0.1:3306/overengineered

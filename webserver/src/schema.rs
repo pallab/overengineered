@@ -5,8 +5,8 @@ diesel::table! {
         id -> Integer,
         fname -> Varchar,
         lname -> Nullable<Varchar>,
-        email -> Nullable<Varchar>,
+        email -> Varchar,
         is_admin -> Bool,
-        created_at -> Nullable<Timestamp>,
+        created_at -> Timestamp,
     }
 }
