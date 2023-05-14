@@ -1,21 +1,29 @@
-use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder, Result};
-use actix_web::http::header::ContentType;
+use std::sync::Arc;
+use actix_web::{get, web, error, post, App, HttpResponse, HttpServer, Responder, Result, Error, ResponseError};
 use actix_files::NamedFile;
-use config::FileFormat::Json;
 
-use crate::models;
+use crate::{db, DbPool};
+use crate::models::{NewUser, User};
 
 pub async fn index() -> impl Responder {
     NamedFile::open_async("./static/index.html").await.unwrap()
 }
 
 #[post("/login")]
-pub async fn login(form: web::Json<models::NewUser>) -> impl Responder {
+pub async fn login(form: web::Json<NewUser>) -> impl Responder {
     println!("got login {}", serde_json::json!(form.0));
 
     HttpResponse::Ok().body("done")
 }
 
+#[get("users/list")]
+pub async fn list_users(pool: web::Data<Arc<DbPool>>) -> impl Responder {
+    let mut conn = &mut pool.get().unwrap();
+    let usersm: Vec<User> = db::table::users::list_users(&mut conn)
+        .map_err(|e| error::ErrorInternalServerError(e)).unwrap();
+
+    HttpResponse::Ok().json(usersm)
+}
 
 // #[get("/count")]
 // async fn counter(app_data : web::Data<AppState>) -> impl Responder {

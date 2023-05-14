@@ -3,46 +3,48 @@ mod routes;
 mod models;
 mod db;
 mod schema;
-use std::sync::Mutex;
+
+use std::sync::{Arc, Mutex};
 use actix_files::Files;
 use crate::config::load_config;
-use serde_json::json;
-use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder, Result};
+use actix_web::{App, web, HttpServer};
+use diesel::r2d2;
+use diesel::r2d2::{ConnectionManager};
+use diesel::MysqlConnection;
+use env_logger::Env;
 
-struct AppState {
-    counter: Mutex<i32>,
-}
+type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
+type PooledConn = r2d2::PooledConnection<ConnectionManager<MysqlConnection>>;
+type DbError = Box<dyn std::error::Error + Send + Sync>;
+
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    println!("Starting the app ..........");
-    println!("Starting the app ..........");
+    println!("Starting the app. Environment variables are :");
+//    std::env::vars().for_each(|v| println!("{} : {}", v.0, v.1));
 
+    std::env::set_var("RUST_LOG", "debug");
+    env_logger::init_from_env(Env::default().default_filter_or("info"));
+
+    // load the config file
     let config_file = std::env::var("CONFIG_FILE").unwrap_or(String::from("config.json"));
-
     let config = load_config(config_file);
 
     println!("config is {}", serde_json::to_string(&config).unwrap());
 
-    let url = std::env::var("DATABASE_URL").unwrap_or("".to_owned());
-    println!("db url is {} ", url);
-    // let app_state = web::Data::new(AppState{
-    //     counter : Mutex::new(0)
-    // });
+    let manager = ConnectionManager::<MysqlConnection>::new(config.db_url);
 
-    let mut db_conn = db::create_connection(&url);
-
-    let users = db::table::users::list_users(&mut db_conn);
-
-    let usrs : Vec<String> = users.iter().map(|u| serde_json::json!(u).to_string()).collect();
-
-    println!("Users are : \n{}", usrs.join("\n") );
+    let pool: Arc<DbPool> = Arc::new(r2d2::Pool::builder()
+        .max_size(4)
+        .build(manager)
+        .expect("database URL should be valid"));
 
     HttpServer::new(move || {
         App::new()
-            //.app_data(app_state.clone())
+            .app_data(web::Data::new(pool.clone()))
             .service(web::resource("/").to(routes::index))
             .service(routes::login)
+            .service(routes::list_users)
             .service(Files::new("/", "./static"))
     })
         .bind((config.host, config.port))?

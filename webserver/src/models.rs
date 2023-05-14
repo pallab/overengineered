@@ -20,7 +20,7 @@ pub struct User {
 }
 
 mod my_date_format {
-    use chrono::{NaiveDateTime, Utc, TimeZone};
+    use chrono::{NaiveDateTime};
     use serde::{self, Deserialize, Serializer, Deserializer};
 
     const FORMAT: &'static str = "%Y-%m-%d %H:%M:%S";

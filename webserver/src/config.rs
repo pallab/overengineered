@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 pub struct AppConfig {
     pub host : String,
     pub port : u16,
-    pub db : String
+    pub db_url : String
 }
 
 pub fn load_config(config_file : String) -> AppConfig {
