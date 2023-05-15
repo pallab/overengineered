@@ -1,0 +1,25 @@
+syntax = "proto3";
+package messenger;
+
+option go_package = "go_rpc_server/messenger";
+
+service Messenger {
+
+  rpc ListFiles(ListFilesRequest) returns (ListFilesResponse) {};
+
+  rpc LoadFile(LoadFileRequest) returns (stream LoadFileResponse) {};
+}
+
+message ListFilesRequest {}
+
+message ListFilesResponse {
+  repeated string names =1;
+}
+
+message LoadFileRequest {
+  string name = 1;
+}
+
+message LoadFileResponse {
+  bool is_success = 1;
+}

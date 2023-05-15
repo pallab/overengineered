@@ -4,7 +4,7 @@ mod models;
 mod db;
 mod schema;
 
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc};
 use actix_files::Files;
 use crate::config::load_config;
 use actix_web::{App, web, HttpServer};
@@ -13,10 +13,17 @@ use diesel::r2d2::{ConnectionManager};
 use diesel::MysqlConnection;
 use env_logger::Env;
 
+use tonic::{transport::Server, Request, Response, Status};
+use messenger::{ListFilesRequest};
+use messenger::messenger_client::MessengerClient;
+
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 type PooledConn = r2d2::PooledConnection<ConnectionManager<MysqlConnection>>;
 type DbError = Box<dyn std::error::Error + Send + Sync>;
 
+pub mod messenger {
+    tonic::include_proto!("messenger");
+}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -31,6 +38,21 @@ async fn main() -> std::io::Result<()> {
     let config = load_config(config_file);
 
     println!("config is {}", serde_json::to_string(&config).unwrap());
+
+    let mut grpc_client = MessengerClient::connect("http://[::1]:8089").await.expect("");
+
+    let request = tonic::Request::new(
+        ListFilesRequest { }
+    );
+
+    let response = grpc_client.list_files(request).await.expect("");
+    println!("grpc response {:?}", response);
+
+
+
+
+
+
 
     let manager = ConnectionManager::<MysqlConnection>::new(config.db_url);
 
@@ -49,7 +71,7 @@ async fn main() -> std::io::Result<()> {
     })
         .bind((config.host, config.port))?
         .run()
-        .await
+        .await;
 
-   // std::io::Result::Ok(())
+   std::io::Result::Ok(())
 }
