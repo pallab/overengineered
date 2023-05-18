@@ -3,6 +3,8 @@ mod routes;
 mod models;
 mod db;
 mod schema;
+mod file_server;
+mod rpc;
 
 use std::sync::{Arc};
 use actix_files::Files;
@@ -13,17 +15,13 @@ use diesel::r2d2::{ConnectionManager};
 use diesel::MysqlConnection;
 use env_logger::Env;
 
-use tonic::{transport::Server, Request, Response, Status};
-use messenger::{ListFilesRequest};
-use messenger::messenger_client::MessengerClient;
-
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 type PooledConn = r2d2::PooledConnection<ConnectionManager<MysqlConnection>>;
 type DbError = Box<dyn std::error::Error + Send + Sync>;
 
-pub mod messenger {
-    tonic::include_proto!("messenger");
-}
+// pub mod file_server {
+//     tonic::include_proto!("file_server.rs");
+// }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -39,27 +37,14 @@ async fn main() -> std::io::Result<()> {
 
     println!("config is {}", serde_json::to_string(&config).unwrap());
 
-    let mut grpc_client = MessengerClient::connect("http://[::1]:8089").await.expect("");
-
-    let request = tonic::Request::new(
-        ListFilesRequest { }
-    );
-
-    let response = grpc_client.list_files(request).await.expect("");
-    println!("grpc response {:?}", response);
-
-
-
-
-
-
-
-    let manager = ConnectionManager::<MysqlConnection>::new(config.db_url);
+    let manager = ConnectionManager::<MysqlConnection>::new(config.mysql.db_url);
 
     let pool: Arc<DbPool> = Arc::new(r2d2::Pool::builder()
         .max_size(4)
         .build(manager)
         .expect("database URL should be valid"));
+
+    let rpc_config = Arc::new(config.rpc);
 
     HttpServer::new(move || {
         App::new()
@@ -67,11 +52,14 @@ async fn main() -> std::io::Result<()> {
             .service(web::resource("/").to(routes::index))
             .service(routes::login)
             .service(routes::list_users)
+            .service(
+                web::scope("")
+                    .app_data(web::Data::new(rpc_config.clone()))
+                    .service(routes::list_files),
+            )
             .service(Files::new("/", "./static"))
     })
-        .bind((config.host, config.port))?
+        .bind((config.server.host, config.server.port))?
         .run()
-        .await;
-
-   std::io::Result::Ok(())
+        .await
 }

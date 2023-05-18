@@ -20,15 +20,15 @@ pub struct LoadFileResponse {
     pub is_success: bool,
 }
 /// Generated client implementations.
-pub mod messenger_client {
+pub mod files_client {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
     use tonic::codegen::*;
     use tonic::codegen::http::Uri;
     #[derive(Debug, Clone)]
-    pub struct MessengerClient<T> {
+    pub struct FilesClient<T> {
         inner: tonic::client::Grpc<T>,
     }
-    impl MessengerClient<tonic::transport::Channel> {
+    impl FilesClient<tonic::transport::Channel> {
         /// Attempt to create a new client by connecting to a given endpoint.
         pub async fn connect<D>(dst: D) -> Result<Self, tonic::transport::Error>
         where
@@ -39,7 +39,7 @@ pub mod messenger_client {
             Ok(Self::new(conn))
         }
     }
-    impl<T> MessengerClient<T>
+    impl<T> FilesClient<T>
     where
         T: tonic::client::GrpcService<tonic::body::BoxBody>,
         T::Error: Into<StdError>,
@@ -57,7 +57,7 @@ pub mod messenger_client {
         pub fn with_interceptor<F>(
             inner: T,
             interceptor: F,
-        ) -> MessengerClient<InterceptedService<T, F>>
+        ) -> FilesClient<InterceptedService<T, F>>
         where
             F: tonic::service::Interceptor,
             T::ResponseBody: Default,
@@ -71,7 +71,7 @@ pub mod messenger_client {
                 http::Request<tonic::body::BoxBody>,
             >>::Error: Into<StdError> + Send + Sync,
         {
-            MessengerClient::new(InterceptedService::new(inner, interceptor))
+            FilesClient::new(InterceptedService::new(inner, interceptor))
         }
         /// Compress requests with the given encoding.
         ///
@@ -122,11 +122,11 @@ pub mod messenger_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/messenger.Messenger/ListFiles",
+                "/file_server.Files/ListFiles",
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("messenger.Messenger", "ListFiles"));
+                .insert(GrpcMethod::new("file_server.Files", "ListFiles"));
             self.inner.unary(req, path, codec).await
         }
         pub async fn load_file(
@@ -147,11 +147,11 @@ pub mod messenger_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/messenger.Messenger/LoadFile",
+                "/file_server.Files/LoadFile",
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("messenger.Messenger", "LoadFile"));
+                .insert(GrpcMethod::new("file_server.Files", "LoadFile"));
             self.inner.server_streaming(req, path, codec).await
         }
     }

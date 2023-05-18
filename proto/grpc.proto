@@ -1,9 +1,9 @@
 syntax = "proto3";
-package messenger;
+package file_server;
 
-option go_package = "go_rpc_server/messenger";
+option go_package = "go_rpc_server/file_server";
 
-service Messenger {
+service Files {
 
   rpc ListFiles(ListFilesRequest) returns (ListFilesResponse) {};
 

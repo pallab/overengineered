@@ -2,8 +2,14 @@ use std::sync::Arc;
 use actix_web::{get, web, error, post, App, HttpResponse, HttpServer, Responder, Result, Error, ResponseError};
 use actix_files::NamedFile;
 
+use tonic::{transport::Server, Request, Response, Status};
+use crate::file_server::{ListFilesRequest};
+use crate::file_server::files_client::FilesClient;
+
 use crate::{db, DbPool};
+use crate::config::RpcConfig;
 use crate::models::{NewUser, User};
+use crate::rpc::rpc;
 
 pub async fn index() -> impl Responder {
     NamedFile::open_async("./static/index.html").await.unwrap()
@@ -23,6 +29,16 @@ pub async fn list_users(pool: web::Data<Arc<DbPool>>) -> impl Responder {
         .map_err(|e| error::ErrorInternalServerError(e)).unwrap();
 
     HttpResponse::Ok().json(usersm)
+}
+
+#[get("files/list")]
+pub async fn list_files(rpc_config : web::Data<Arc<RpcConfig>>) -> impl Responder {
+
+    let mut client = rpc::new_client(&rpc_config.host, rpc_config.port).await.expect("");
+
+    let response = rpc::list_files(&mut client).await;
+
+    HttpResponse::Ok().json(response.names)
 }
 
 // #[get("/count")]

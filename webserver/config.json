@@ -1,5 +1,13 @@
 {
-  "host" : "127.0.0.1",
-  "port" : 8080,
-  "db_url" : "mysql://tenxdev:tenxpasswd@127.0.0.1:3306/overengineered"
+  "server": {
+    "host": "127.0.0.1",
+    "port": 8080
+  },
+  "mysql": {
+    "db_url": "mysql://tenxdev:tenxpasswd@127.0.0.1:3306/overengineered"
+  },
+  "rpc": {
+    "host": "127.0.0.1",
+    "port": 8089
+  }
 }
