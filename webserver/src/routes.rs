@@ -5,13 +5,11 @@ use actix_web::http::StatusCode;
 use serde::Deserialize;
 
 use tonic::{transport::Server, Request, Response, Status};
-use crate::file_server::{ListFilesRequest};
-use crate::file_server::files_client::FilesClient;
 
 use crate::{db, DbPool};
 use crate::config::RpcConfig;
 use crate::models::{NewUser, User};
-use crate::rpc::rpc;
+use crate::rpc_impl::rpc;
 
 pub async fn index() -> impl Responder {
     NamedFile::open_async("./static/index.html").await.unwrap()
@@ -33,11 +31,11 @@ pub async fn list_users(pool: web::Data<Arc<DbPool>>) -> impl Responder {
     HttpResponse::Ok().json(usersm)
 }
 
-#[get("files/list")]
-pub async fn list_files(rpc_config: web::Data<Arc<RpcConfig>>) -> impl Responder {
+#[get("stocks/list")]
+pub async fn list_stocks(rpc_config: web::Data<Arc<RpcConfig>>) -> impl Responder {
     let mut client = rpc::new_client(&rpc_config.host, rpc_config.port).await.expect("");
 
-    let response = rpc::list_files(&mut client).await;
+    let response = rpc::list_stocks(&mut client).await;
 
     HttpResponse::Ok().json(response.names)
 }
@@ -47,13 +45,13 @@ pub struct LoadFileQuery {
     pub id: String,
 }
 
-#[get("files/load")]
-pub async fn load_file(config: web::Data<Arc<RpcConfig>>,
-                       query: web::Query<LoadFileQuery>) -> Result<impl Responder> {
+#[get("stocks/ticks")]
+pub async fn stock_price_ticks(config: web::Data<Arc<RpcConfig>>,
+                               query: web::Query<LoadFileQuery>) -> Result<impl Responder> {
     let mut client = rpc::new_client(&config.host, config.port).await
         .map_err(|e| error::InternalError::new(e.to_string(), StatusCode::INTERNAL_SERVER_ERROR))?;
 
-    let response = rpc::load_file_to_str(&mut client, query.id.clone()).await?;
+    let response = rpc::get_price_ticks(&mut client, query.id.clone()).await?;
 
     Ok( HttpResponse::Ok().json(response) )
 }

@@ -3,8 +3,8 @@ mod routes;
 mod models;
 mod db;
 mod schema;
-mod file_server;
-mod rpc;
+mod stocks_rpc;
+mod rpc_impl;
 
 use std::sync::{Arc};
 use actix_files::Files;
@@ -19,14 +19,10 @@ type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 type PooledConn = r2d2::PooledConnection<ConnectionManager<MysqlConnection>>;
 type DbError = Box<dyn std::error::Error + Send + Sync>;
 
-// pub mod file_server {
-//     tonic::include_proto!("file_server.rs");
-// }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     println!("Starting the app. Environment variables are :");
-//    std::env::vars().for_each(|v| println!("{} : {}", v.0, v.1));
 
     std::env::set_var("RUST_LOG", "debug");
     env_logger::init_from_env(Env::default().default_filter_or("info"));
@@ -55,8 +51,8 @@ async fn main() -> std::io::Result<()> {
             .service(
                 web::scope("")
                     .app_data(web::Data::new(rpc_config.clone()))
-                    .service(routes::list_files)
-                    .service(routes::load_file),
+                    .service(routes::list_stocks)
+                    .service(routes::stock_price_ticks),
             )
             .service(Files::new("/", "./static"))
     })

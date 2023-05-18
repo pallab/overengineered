@@ -3,27 +3,44 @@ package main
 import (
 	"context"
 	"log"
-	pb "overengineered.com/rpc/file_server"
+	pb "overengineered.com/rpc/market"
 	"time"
 )
 
-func (s *serverImpl) ListFiles(context.Context, *pb.ListFilesRequest) (*pb.ListFilesResponse, error) {
-	return &pb.ListFilesResponse{
-		Names: []string{"a", "b"},
+var market = NewMarket()
+var random = Rand{}
+
+func (s *serverImpl) ListStocks(context.Context, *pb.ListStocksRequest) (*pb.ListStocksResponse, error) {
+	return &pb.ListStocksResponse{
+		Names: market.tickers,
 	}, nil
 }
 
-func (s *serverImpl) LoadFile(req *pb.LoadFileRequest, stream pb.Files_LoadFileServer) error {
+func (s *serverImpl) GetStockPrice(req *pb.StockPriceRequest, stream pb.StockMarket_GetStockPriceServer) error {
 	log.Printf("received request : %v", req.Name)
 
-	for i := 0; i < 10; i++ {
-		err := stream.Send(&pb.LoadFileResponse{
-			IsSuccess: i%2 == 0,
-		})
-		if err != nil {
+	c := make(chan pb.StockPriceResponse, 100)
+
+	go func(c chan pb.StockPriceResponse) {
+		for i := 0; i < 100; i++ {
+			for _, tick := range market.tickers {
+				res := pb.StockPriceResponse{
+					Timestamp: uint64(time.Now().Unix()),
+					Ticker:    tick,
+					Price:     uint32(random.RandNum(32, 67)),
+					Volume:    uint32(random.RandNum(45, 56)),
+				}
+				c <- res
+			}
+			time.Sleep(1 * time.Second)
+		}
+		close(c)
+	}(c)
+
+	for res := range c {
+		if err := stream.Send(&res); err != nil {
 			return err
 		}
-		time.Sleep(2 * time.Second)
 	}
 	return nil
 }

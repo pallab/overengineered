@@ -1,34 +1,40 @@
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ListFilesRequest {}
+pub struct ListStocksRequest {}
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ListFilesResponse {
+pub struct ListStocksResponse {
     #[prost(string, repeated, tag = "1")]
     pub names: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct LoadFileRequest {
+pub struct StockPriceRequest {
     #[prost(string, tag = "1")]
     pub name: ::prost::alloc::string::String,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct LoadFileResponse {
-    #[prost(bool, tag = "1")]
-    pub is_success: bool,
+pub struct StockPriceResponse {
+    #[prost(uint64, tag = "1")]
+    pub timestamp: u64,
+    #[prost(string, tag = "2")]
+    pub ticker: ::prost::alloc::string::String,
+    #[prost(uint32, tag = "3")]
+    pub price: u32,
+    #[prost(uint32, tag = "4")]
+    pub volume: u32,
 }
 /// Generated client implementations.
-pub mod files_client {
+pub mod stock_market_client {
     #![allow(unused_variables, dead_code, missing_docs, clippy::let_unit_value)]
     use tonic::codegen::*;
     use tonic::codegen::http::Uri;
     #[derive(Debug, Clone)]
-    pub struct FilesClient<T> {
+    pub struct StockMarketClient<T> {
         inner: tonic::client::Grpc<T>,
     }
-    impl FilesClient<tonic::transport::Channel> {
+    impl StockMarketClient<tonic::transport::Channel> {
         /// Attempt to create a new client by connecting to a given endpoint.
         pub async fn connect<D>(dst: D) -> Result<Self, tonic::transport::Error>
         where
@@ -39,7 +45,7 @@ pub mod files_client {
             Ok(Self::new(conn))
         }
     }
-    impl<T> FilesClient<T>
+    impl<T> StockMarketClient<T>
     where
         T: tonic::client::GrpcService<tonic::body::BoxBody>,
         T::Error: Into<StdError>,
@@ -57,7 +63,7 @@ pub mod files_client {
         pub fn with_interceptor<F>(
             inner: T,
             interceptor: F,
-        ) -> FilesClient<InterceptedService<T, F>>
+        ) -> StockMarketClient<InterceptedService<T, F>>
         where
             F: tonic::service::Interceptor,
             T::ResponseBody: Default,
@@ -71,7 +77,7 @@ pub mod files_client {
                 http::Request<tonic::body::BoxBody>,
             >>::Error: Into<StdError> + Send + Sync,
         {
-            FilesClient::new(InterceptedService::new(inner, interceptor))
+            StockMarketClient::new(InterceptedService::new(inner, interceptor))
         }
         /// Compress requests with the given encoding.
         ///
@@ -104,11 +110,11 @@ pub mod files_client {
             self.inner = self.inner.max_encoding_message_size(limit);
             self
         }
-        pub async fn list_files(
+        pub async fn list_stocks(
             &mut self,
-            request: impl tonic::IntoRequest<super::ListFilesRequest>,
+            request: impl tonic::IntoRequest<super::ListStocksRequest>,
         ) -> std::result::Result<
-            tonic::Response<super::ListFilesResponse>,
+            tonic::Response<super::ListStocksResponse>,
             tonic::Status,
         > {
             self.inner
@@ -122,18 +128,18 @@ pub mod files_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/file_server.Files/ListFiles",
+                "/stocks_rpc.StockMarket/ListStocks",
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("file_server.Files", "ListFiles"));
+                .insert(GrpcMethod::new("stocks_rpc.StockMarket", "ListStocks"));
             self.inner.unary(req, path, codec).await
         }
-        pub async fn load_file(
+        pub async fn get_stock_price(
             &mut self,
-            request: impl tonic::IntoRequest<super::LoadFileRequest>,
+            request: impl tonic::IntoRequest<super::StockPriceRequest>,
         ) -> std::result::Result<
-            tonic::Response<tonic::codec::Streaming<super::LoadFileResponse>>,
+            tonic::Response<tonic::codec::Streaming<super::StockPriceResponse>>,
             tonic::Status,
         > {
             self.inner
@@ -147,11 +153,11 @@ pub mod files_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/file_server.Files/LoadFile",
+                "/stocks_rpc.StockMarket/GetStockPrice",
             );
             let mut req = request.into_request();
             req.extensions_mut()
-                .insert(GrpcMethod::new("file_server.Files", "LoadFile"));
+                .insert(GrpcMethod::new("stocks_rpc.StockMarket", "GetStockPrice"));
             self.inner.server_streaming(req, path, codec).await
         }
     }

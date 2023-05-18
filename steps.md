@@ -65,4 +65,4 @@ diesel migration run --migration-dir database/migrations --database-url mysql://
 diesel print-schema --database-url mysql://tenxdev:tenxpasswd@127.0.0.1:3306/overengineered
 
 ### Protobuf
-protoc --go_out=. --go-grpc_out=. proto/grpc.proto
+protoc --go_out=. --go-grpc_out=. proto/stocks.proto

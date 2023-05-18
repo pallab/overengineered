@@ -5,7 +5,7 @@ import (
 	"google.golang.org/grpc"
 	"log"
 	"net"
-	pb "overengineered.com/rpc/file_server"
+	pb "overengineered.com/rpc/market"
 )
 
 func main() {
@@ -18,11 +18,11 @@ func main() {
 	}
 
 	server := grpc.NewServer()
-	pb.RegisterFilesServer(server, &serverImpl{})
+	pb.RegisterStockMarketServer(server, &serverImpl{})
 
 	server.Serve(listener)
 }
 
 type serverImpl struct {
-	pb.FilesServer
+	pb.StockMarketServer
 }
