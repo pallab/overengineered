@@ -1,6 +1,8 @@
 use std::sync::Arc;
 use actix_web::{get, web, error, post, App, HttpResponse, HttpServer, Responder, Result, Error, ResponseError};
 use actix_files::NamedFile;
+use actix_web::http::StatusCode;
+use serde::Deserialize;
 
 use tonic::{transport::Server, Request, Response, Status};
 use crate::file_server::{ListFilesRequest};
@@ -32,13 +34,28 @@ pub async fn list_users(pool: web::Data<Arc<DbPool>>) -> impl Responder {
 }
 
 #[get("files/list")]
-pub async fn list_files(rpc_config : web::Data<Arc<RpcConfig>>) -> impl Responder {
-
+pub async fn list_files(rpc_config: web::Data<Arc<RpcConfig>>) -> impl Responder {
     let mut client = rpc::new_client(&rpc_config.host, rpc_config.port).await.expect("");
 
     let response = rpc::list_files(&mut client).await;
 
     HttpResponse::Ok().json(response.names)
+}
+
+#[derive(Deserialize)]
+pub struct LoadFileQuery {
+    pub id: String,
+}
+
+#[get("files/load")]
+pub async fn load_file(config: web::Data<Arc<RpcConfig>>,
+                       query: web::Query<LoadFileQuery>) -> Result<impl Responder> {
+    let mut client = rpc::new_client(&config.host, config.port).await
+        .map_err(|e| error::InternalError::new(e.to_string(), StatusCode::INTERNAL_SERVER_ERROR))?;
+
+    let response = rpc::load_file_to_str(&mut client, query.id.clone()).await?;
+
+    Ok( HttpResponse::Ok().json(response) )
 }
 
 // #[get("/count")]

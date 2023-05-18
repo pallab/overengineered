@@ -55,7 +55,8 @@ async fn main() -> std::io::Result<()> {
             .service(
                 web::scope("")
                     .app_data(web::Data::new(rpc_config.clone()))
-                    .service(routes::list_files),
+                    .service(routes::list_files)
+                    .service(routes::load_file),
             )
             .service(Files::new("/", "./static"))
     })
