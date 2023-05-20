@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use actix::Addr;
 use actix_web::{get, web, error, post, App, HttpResponse, HttpServer, Responder, Result, Error, ResponseError};
 use actix_files::NamedFile;
 use actix_web::http::StatusCode;
@@ -7,6 +8,7 @@ use serde::Deserialize;
 use tonic::{transport::Server, Request, Response, Status};
 
 use crate::{db, DbPool};
+use crate::actors::leader::{LeaderActor, Start};
 use crate::config::RpcConfig;
 use crate::models::{NewUser, User};
 use crate::rpc_impl::rpc;
@@ -18,7 +20,6 @@ pub async fn index() -> impl Responder {
 #[post("/login")]
 pub async fn login(form: web::Json<NewUser>) -> impl Responder {
     println!("got login {}", serde_json::json!(form.0));
-
     HttpResponse::Ok().body("done")
 }
 
@@ -32,8 +33,11 @@ pub async fn list_users(pool: web::Data<Arc<DbPool>>) -> impl Responder {
 }
 
 #[get("stocks/list")]
-pub async fn list_stocks(rpc_config: web::Data<Arc<RpcConfig>>) -> impl Responder {
+pub async fn list_stocks(rpc_config: web::Data<Arc<RpcConfig>>,
+                         addr: web::Data<Arc<Addr<LeaderActor>>>) -> impl Responder {
     let mut client = rpc::new_client(&rpc_config.host, rpc_config.port).await.expect("");
+
+    addr.do_send(Start);
 
     let response = rpc::list_stocks(&mut client).await;
 
@@ -51,9 +55,9 @@ pub async fn stock_price_ticks(config: web::Data<Arc<RpcConfig>>,
     let mut client = rpc::new_client(&config.host, config.port).await
         .map_err(|e| error::InternalError::new(e.to_string(), StatusCode::INTERNAL_SERVER_ERROR))?;
 
-    let response = rpc::get_price_ticks(&mut client, query.id.clone()).await?;
+    let response = rpc::get_price_ticks(&mut client).await?;
 
-    Ok( HttpResponse::Ok().json(response) )
+    Ok( HttpResponse::Ok())
 }
 
 // #[get("/count")]

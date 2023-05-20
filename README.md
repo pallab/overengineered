@@ -26,3 +26,6 @@ All the pieces in this are dockerized. There's a docker compose file to run it a
 
 ### Kubernetes
 Umm. Maybe. :)
+
+### Actors
+I love Akka actors. So I thought I'll find something similar for rust. I found a couple, there is riker which is heavily inspired by Akka but seems almost dead. And there is Actix, which is still actively developed. Compared to Akka actix seems limited in feature and very hard to work with. Specially the async rpc call I made in the handler pushed my stress level through the roof for a good part of the day till midnight when I found a workable compromise. 

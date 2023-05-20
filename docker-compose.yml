@@ -35,6 +35,17 @@ services:
       - backend
     ports:
       - 8080:8080
+  kafka:
+    image: bitnami/kafka:3.4.0
+    environment:
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
+      - KAFKA_ENABLE_KRAFT=yes
+    networks:
+      - backend
+    ports:
+      - 9092:9092
+
 
 networks:
   frontend:
