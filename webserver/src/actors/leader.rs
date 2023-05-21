@@ -1,14 +1,19 @@
-
 use std::time::Duration;
 use actix::{Actor, AsyncContext, Context, Handler, Message, WrapFuture};
-use log::info;
+use log::{debug, error, info};
 use tonic::transport::Channel;
 use crate::stocks_rpc::stock_market_client::StockMarketClient;
 use actix::prelude::*;
+use rand::distributions::Alphanumeric;
+use rand::Rng;
+use rdkafka::producer::{FutureProducer, FutureRecord};
+use tonic::IntoStreamingRequest;
+use crate::kafka::Kafka;
 use crate::stocks_rpc::StockPriceRequest;
 
 pub struct LeaderActor {
     pub rpc_client: Option<StockMarketClient<Channel>>,
+    pub kafka_client: Option<Kafka>,
 }
 
 #[derive(Message, Debug)]
@@ -17,7 +22,7 @@ pub struct Start;
 
 #[derive(Message, Debug)]
 #[rtype(result = "()")]
-struct Ping;
+struct Ping{counter : i32}
 
 impl Actor for LeaderActor {
     type Context = Context<Self>;
@@ -36,7 +41,7 @@ impl Handler<Start> for LeaderActor {
 
     fn handle(&mut self, msg: Start, ctx: &mut Self::Context) -> Self::Result {
         info!("received start");
-        ctx.address().do_send(Ping);
+        ctx.address().do_send(Ping{counter : 0});
     }
 }
 
@@ -47,39 +52,53 @@ impl Handler<Ping> for LeaderActor {
         info!("received ping");
         // we take the client out since we can not move it to the async bloc while its part of self
         // reason is the async future may outlive the actor itself
-        let mut client = self.rpc_client.take().unwrap();
+        let mut rpc_client = self.rpc_client.take().unwrap();
+        let kafka_client = self.kafka_client.take().unwrap();
 
         Box::pin(
             async move {
+
                 let request = tonic::Request::new(
-                    StockPriceRequest { name: "h".to_string() }
+                    StockPriceRequest { name: "d".to_string() }
                 );
 
-                let response = client.get_stock_price(request).await.expect("");
+                let response = rpc_client.get_stock_price(request).await.expect("");
+                let mut stream = response.into_inner();
 
-                let price = response.into_inner().message().await.unwrap_or(None);
+                let mut counts = 0;
 
-                (client, price)
+                while let Some(p) = &mut stream.message().await.unwrap_or(None) {
+                    counts+=1;
+                    let resp = kafka_client.send(p.to_owned()).await;
+
+                    if resp.is_err() {
+                        error!("Could not send : {:?} - err : {:?}", p, resp.err())
+                    } else {
+                        debug!("Successful send {counts} {:?}", p)
+                    }
+                }
+
+                info!("started_with {} / total_saved {}", msg.counter , counts);
+
+                (rpc_client, kafka_client, counts)
             }
                 .into_actor(self)
                 .map(
-                    |(client, price), _self, _ctx| {
-                        _self.rpc_client = Some(client);
-
-                        price
+                    |(rpc_client, kafka_client, counts), _self, _ctx| {
+                        _self.rpc_client = Some(rpc_client);
+                        _self.kafka_client = Some(kafka_client);
+                        counts
                     })
                 .map(
-                    |price, _self, _ctx| {
-
-                        if price.is_some() {
-                            // add to kafka
-                            info!("adding to kafka {:#?}", price.unwrap());
+                    |counts, _self, _ctx| {
+                        if counts >0 {
                             // immediately ask for the next msg
-                            _ctx.address().do_send(Ping);
+                            info!("More available . count = {}", counts);
+                            _ctx.address().do_send(Ping{counter : msg.counter + counts});
                         } else {
                             // wait for a while and then ask
                             info!("No more prices . waiting for 10 seconds");
-                            _ctx.notify_later(Ping, Duration::from_secs(10));
+                            _ctx.notify_later(msg, Duration::from_secs(10));
                         }
                     })
         )

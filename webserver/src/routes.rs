@@ -37,8 +37,6 @@ pub async fn list_stocks(rpc_config: web::Data<Arc<RpcConfig>>,
                          addr: web::Data<Arc<Addr<LeaderActor>>>) -> impl Responder {
     let mut client = rpc::new_client(&rpc_config.host, rpc_config.port).await.expect("");
 
-    addr.do_send(Start);
-
     let response = rpc::list_stocks(&mut client).await;
 
     HttpResponse::Ok().json(response.names)

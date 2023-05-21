@@ -18,6 +18,7 @@ log = "0.4"
 env_logger = "0.10.0"
 tonic = "0.9.2"
 prost = "0.11.9"
+rand = "0.8.5"
 # requires cmake. brew install cmake
 rdkafka = { version = "0.25", features = ["cmake-build"] }
 #tokio = { version = "1.28.1", features = ["macros", "rt-multi-thread"]}

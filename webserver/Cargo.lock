@@ -2328,6 +2328,7 @@ dependencies = [
  "env_logger",
  "log",
  "prost",
+ "rand",
  "rdkafka",
  "serde",
  "serde_json",

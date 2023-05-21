@@ -6,6 +6,7 @@ mod schema;
 mod stocks_rpc;
 mod rpc_impl;
 mod actors;
+mod kafka;
 
 use std::sync::{Arc, Mutex};
 use actix::Actor;
@@ -18,6 +19,7 @@ use diesel::r2d2::{ConnectionManager};
 use diesel::MysqlConnection;
 use env_logger::Env;
 use log::*;
+use crate::kafka::Kafka;
 
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 type PooledConn = r2d2::PooledConnection<ConnectionManager<MysqlConnection>>;
@@ -45,10 +47,14 @@ async fn main() -> std::io::Result<()> {
         .expect("database URL should be valid"));
 
     let rpc_config = Arc::new(config.rpc);
+    let client = rpc_impl::rpc::new_client(&rpc_config.host, rpc_config.port).await.expect("");
 
-    let  client = rpc_impl::rpc::new_client(&rpc_config.host, rpc_config.port).await.expect("");
+    let kafka_client = Kafka::new();
 
-    let addr = actors::leader::LeaderActor{ rpc_client : Some(client)}.start();
+    let addr = actors::leader::LeaderActor {
+        rpc_client: Some(client),
+        kafka_client : Some(kafka_client),
+    }.start();
 
     addr.do_send(actors::leader::Start);
 
@@ -63,7 +69,7 @@ async fn main() -> std::io::Result<()> {
             .service(routes::list_users)
             .service(
                 web::scope("")
-                    .app_data(web::Data::new(rpc_config.clone()))
+                    .app_data(web::Data::new(Arc::clone(&rpc_config)))
                     .service(routes::list_stocks)
                     .service(routes::stock_price_ticks),
             )
