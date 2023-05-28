@@ -1,7 +1,4 @@
-use std::collections::HashMap;
-use std::str::Chars;
-use log::info;
-use rand::random;
+
 use serde::{Deserialize, Serialize};
 use crate::letters::Letters;
 

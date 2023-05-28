@@ -76,7 +76,7 @@ async fn main() -> std::io::Result<()> {
             .service(routes::list_users)
             .route("/ws", web::get().to(route_websocket::ws_route))
             .service(
-                web::scope("")
+                web::scope("/stcoks")
                     .app_data(web::Data::new(Arc::clone(&rpc_config)))
                     .service(routes::list_stocks)
                     .service(routes::stock_price_ticks),
@@ -86,7 +86,7 @@ async fn main() -> std::io::Result<()> {
             //         .route("/data", web::get().to(route_websocket::ws_route))
             // )
 
-            .service(Files::new("/", "./static"))
+            .service(Files::new("/", "./ui/out"))
     })
         .bind((config.server.host, config.server.port))?
         .run()

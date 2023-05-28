@@ -24,7 +24,7 @@ RUN cargo build --release
 # pull the react dependencies as well
 WORKDIR /app/webserver/ui
 
-COPY ./ui/package.json ./
+COPY src/package.json ./
 RUN npm install
 
 # build and export the ui as static files
@@ -34,7 +34,7 @@ RUN npm run build
 
 # build the rust app
 WORKDIR /app/webserver
-RUN pwd && ls static && ls -alth src
+RUN pwd && ls ui/out && ls -alth src
 
 COPY ./src ./src
 COPY config.docker.json ./
@@ -56,8 +56,8 @@ WORKDIR /app/webserver
 
 COPY --from=build /app/webserver/target/release/webserver ./
 COPY --from=build /app/webserver/config.docker.json ./
-COPY --from=build /app/webserver/static ./static
-RUN pwd && ls -alth && ls static
+COPY --from=build /app/webserver/ui/out ./ui/out
+RUN pwd && ls -alth && ls ui/out
 
 ENV RUST_BACKTRACE=full
 ENV CONFIG_FILE=config.docker.json

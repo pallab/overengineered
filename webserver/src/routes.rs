@@ -14,7 +14,7 @@ use crate::models::{NewUser, User};
 use crate::rpc_impl::rpc;
 
 pub async fn index() -> impl Responder {
-    NamedFile::open_async("./static/index.html").await.unwrap()
+    NamedFile::open_async("./ui/out/index.html").await.unwrap()
 }
 
 #[post("/login")]
