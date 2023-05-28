@@ -41,8 +41,10 @@ impl Handler<PrintLine> for WebSocket {
     type Result = ();
 
     fn handle(&mut self, msg: PrintLine, ctx: &mut Self::Context) -> Self::Result {
-        let tiles: Vec<Tile> = msg.line.to_uppercase().chars().map(Tile::new).collect();
+
+        let tiles: Vec<Tile> = msg.line.to_uppercase().chars().map(|c|Tile::new(c, msg.count * 10)).collect();
         ctx.text(serde_json::to_string(&tiles).unwrap());
+
         ctx.run_later(Duration::from_secs(5),
                       move |_, ctx| {
                           ctx.address().do_send(PrintLine { line: msg.line, count: msg.count + 1 })

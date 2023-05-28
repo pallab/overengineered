@@ -41,9 +41,12 @@ fn get_pixels(c : char) -> Vec<Pixel> {
 }
 
 impl Tile {
-    pub fn new(c: char) -> Self {
+    pub fn new(c: char, fill_p : i32) -> Self {
         let pixels: Vec<Pixel> = get_pixels(c);
-        Self { character: c, pixels, is_complete : false}
+        let filled : usize = pixels.len()  * fill_p as usize/100;
+        let filled_pixels : Vec<Pixel> = pixels.into_iter().take(filled).collect();
+
+        Self { character: c, pixels : filled_pixels, is_complete : false}
     }
 }
 
