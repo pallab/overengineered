@@ -1,10 +1,6 @@
 'use client';
-import Image from 'next/image'
 import Grid from "./Grid";
 import { GridContextProvider } from './GridContext';
-import { connectSocket } from './websokcet';
-import { useEffect } from 'react';
-import { Form } from './Form';
 
 export default function Home() {
 

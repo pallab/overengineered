@@ -1,4 +1,3 @@
-
 use std::time::Duration;
 use actix::{Actor, StreamHandler, Handler};
 use actix::prelude::*;
@@ -10,7 +9,8 @@ use crate::canvas::Tile;
 
 #[derive(Message)]
 #[rtype(result = "()")]
-pub struct SendLetters {
+pub struct PrintLine {
+    line: String,
     count: i32,
 }
 
@@ -24,35 +24,29 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WebSocket {
     fn handle(&mut self, item: Result<Message, ProtocolError>, ctx: &mut Self::Context) {
         match item {
             Ok(ws::Message::Ping(msg)) => {
-                info!("received ping ");
+                info!("Received ping ");
                 ctx.pong(&msg)
             }
 
             Ok(ws::Message::Text(msg)) => {
-                info!("received text {}", msg);
-
-                ctx.run_later(Duration::from_secs(0),
-                              |act, ctx| {
-                                  ctx.address().do_send(SendLetters { count: 0 })
-                              });
+                info!("Received text to print : {}", msg);
+                ctx.address().do_send(PrintLine { line: msg.to_string(), count: 0 })
             }
-            _ => ()
+            _ => info!("Received unknown msg {:#?}", item)
         }
     }
 }
 
-impl Handler<SendLetters> for WebSocket {
+impl Handler<PrintLine> for WebSocket {
     type Result = ();
 
-    fn handle(&mut self, msg: SendLetters, ctx: &mut Self::Context) -> Self::Result {
-        let tiles: Vec<Tile> = "Hello World!".to_uppercase().chars().map(Tile::new).collect();
+    fn handle(&mut self, msg: PrintLine, ctx: &mut Self::Context) -> Self::Result {
+        let tiles: Vec<Tile> = msg.line.to_uppercase().chars().map(Tile::new).collect();
         ctx.text(serde_json::to_string(&tiles).unwrap());
-        // if msg.count < 100 {
-            ctx.run_later(Duration::from_secs(5),
-                          move |act, ctx| {
-                              ctx.address().do_send(SendLetters { count: msg.count + 1 })
-                          });
-        // }
+        ctx.run_later(Duration::from_secs(5),
+                      move |_, ctx| {
+                          ctx.address().do_send(PrintLine { line: msg.line, count: msg.count + 1 })
+                      });
     }
 }
 

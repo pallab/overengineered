@@ -2,7 +2,6 @@
 import React, { useState, useRef, useEffect} from "react";
 import Tile from "./Tile";
 import { useGridContext } from "./GridContext";
-import { stringify } from "postcss";
 
 //  a grid component that fills the screen with Pixel components
 
@@ -18,16 +17,10 @@ const Grid = () => {
     const grid = [];
 
     for (let i in tiles) {  
-        if(i < 23) {
-            let tile = tiles[i];
-
-            console.log(`This tile index : ${i} value : ${JSON.stringify(tile).substring(0, 10)}`);
-    
-            grid.push(<Tile key={i} id={i} tile={tile} />);
-        }
+          let tile = tiles[i];
+          grid.push(<Tile key={i} id={i} tile={tile} />);
     }
 
-    console.log(`Effect : Grid : ${grid.length} : ${typeof(tiles)}`)
     setLetters(grid);
   }, [tiles]);
 

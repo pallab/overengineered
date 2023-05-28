@@ -13,7 +13,9 @@ pub struct Pixel {
 
 #[derive(Debug, Default, Deserialize, Serialize)]
 pub struct Tile {
+    character : char,
     pixels: Vec<Pixel>,
+    is_complete : bool
 }
 
 fn get_pixels(c : char) -> Vec<Pixel> {
@@ -41,7 +43,7 @@ fn get_pixels(c : char) -> Vec<Pixel> {
 impl Tile {
     pub fn new(c: char) -> Self {
         let pixels: Vec<Pixel> = get_pixels(c);
-        Self { pixels }
+        Self { character: c, pixels, is_complete : false}
     }
 }
 

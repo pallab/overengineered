@@ -21,7 +21,7 @@ export const GridContextProvider = ({ children }) => {
     
       conn.onopen = (e) => {
         console.log(`connecting websocket`)
-        conn.send(JSON.stringify( { word : "Hello World!"}))
+        conn.send( "Hello World!")
     };
     
     conn.onmessage = (e) => {
@@ -33,7 +33,6 @@ export const GridContextProvider = ({ children }) => {
             tiles.push(data[p])
         }
 
-        console.log(`received via ws :  ${typeof(tiles)} - ${JSON.stringify(tiles).substring(0, 10)}`);
         setTiles(tiles)
     }    
 
