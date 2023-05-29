@@ -9,5 +9,8 @@
   "rpc": {
     "host": "127.0.0.1",
     "port": 8089
+  },
+  "kafka": {
+    "server": "localhost:9094"
   }
 }

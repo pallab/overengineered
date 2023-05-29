@@ -10,6 +10,8 @@ mod kafka;
 mod route_websocket;
 mod canvas;
 mod letters;
+mod words_rpc_impl;
+mod words_rpc;
 
 use std::sync::{Arc, Mutex};
 use actix::Actor;
@@ -51,18 +53,7 @@ async fn main() -> std::io::Result<()> {
         .expect("database URL should be valid"));
 
     let rpc_config = Arc::new(config.rpc);
-    let client = rpc_impl::rpc::new_client(&rpc_config.host, rpc_config.port).await.expect("");
-
-    let kafka_client = Kafka::new();
-
-    let addr = actors::leader::LeaderActor {
-        rpc_client: Some(client),
-        kafka_client : Some(kafka_client),
-    }.start();
-
-    // addr.do_send(actors::leader::Start);
-
-    let sys_addr = Arc::new(addr);
+    let kafka_config = Arc::new(config.kafka);
 
     HttpServer::new(move || {
         //let cors = Cors::default().allow_any_origin();
@@ -70,14 +61,14 @@ async fn main() -> std::io::Result<()> {
         App::new()
            // .wrap(cors)
             .app_data(web::Data::new(pool.clone()))
-            .app_data(web::Data::new(sys_addr.clone()))
+            .app_data(web::Data::new(Arc::clone(&rpc_config)))
+            .app_data(web::Data::new(Arc::clone(&kafka_config)))
             .service(web::resource("/").to(routes::index))
             .service(routes::login)
             .service(routes::list_users)
             .route("/ws", web::get().to(route_websocket::ws_route))
             .service(
                 web::scope("/stcoks")
-                    .app_data(web::Data::new(Arc::clone(&rpc_config)))
                     .service(routes::list_stocks)
                     .service(routes::stock_price_ticks),
             )
