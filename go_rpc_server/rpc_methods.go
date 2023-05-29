@@ -1,83 +1,39 @@
 package main
 
 import (
-	"context"
-	"errors"
 	"log"
-	pb "overengineered.com/rpc/market"
+	"math/rand"
+	pb "overengineered.com/rpc/words"
 	"time"
 )
 
-var market = NewMarket()
-var random = Rand{}
+func RandString(length int) string {
+	b := make([]uint8, length, length)
 
-func (s *serverImpl) ListStocks(context.Context, *pb.ListStocksRequest) (*pb.ListStocksResponse, error) {
-
-	var names []string
-
-	for k, _ := range market.tickers {
-		names = append(names, k)
+	for i := range b {
+		b[i] = uint8(rand.Intn(123-32) + 32)
 	}
 
-	return &pb.ListStocksResponse{
-		Names: names,
-	}, nil
+	return string(b)
 }
 
-func randomStockPrice() (res pb.StockPriceResponse, err error) {
-
-	var availableKeys []string
-
-	for k, v := range market.tickers {
-		if time.Now().Sub(v).Minutes() > 1 {
-			availableKeys = append(availableKeys, k)
-		}
+func RandomWord() (res pb.GetWordsResponse, err error) {
+	resp := pb.GetWordsResponse{
+		Timestamp: uint64(time.Now().Unix()),
+		Word:      RandString(rand.Intn(5) + 1),
 	}
-
-	if len(availableKeys) > 0 {
-		randomIdx := random.RandNum(0, len(availableKeys))
-		randomKey := availableKeys[randomIdx]
-		lastUpdatedAt := market.tickers[randomKey]
-
-		newUpdatedTime := lastUpdatedAt.Add(time.Duration(1 * time.Minute))
-		resp := pb.StockPriceResponse{
-			Timestamp: uint64(newUpdatedTime.Unix()),
-			Ticker:    randomKey,
-			Price:     uint32(random.RandNum(32, 67)),
-			Volume:    uint32(random.RandNum(45, 56)),
-		}
-		market.tickers[randomKey] = newUpdatedTime
-		log.Printf("sending res :%T, %v \n", resp, resp)
-		return resp, nil
-	}
-	return pb.StockPriceResponse{}, errors.New("no more ")
+	return resp, nil
 }
 
-func (s *serverImpl) GetStockPrice(req *pb.StockPriceRequest, stream pb.StockMarket_GetStockPriceServer) error {
-	log.Printf("received request : %v \n", req.Name)
+func (s *serverImpl) GetWords(req *pb.GetWordsRequest, stream pb.Words_GetWordsServer) error {
+	log.Printf("received request : %v \n", req)
 
-	for {
-		res, err := randomStockPrice()
-		if err != nil {
-			log.Printf("Error : %v \n", err)
-			break
-		} else if err := stream.Send(&res); err != nil {
-			return err
-		}
-	}
+	c := make(chan pb.GetWordsResponse, 100)
 
-	return nil
-}
-
-func (s *serverImpl) GetStockPrice_(req *pb.StockPriceRequest, stream pb.StockMarket_GetStockPriceServer) error {
-	log.Printf("received request : %v \n", req.Name)
-
-	c := make(chan pb.StockPriceResponse, 100)
-
-	go func(c chan pb.StockPriceResponse) {
+	go func(c chan pb.GetWordsResponse) {
 
 		for {
-			p, err := randomStockPrice()
+			p, err := RandomWord()
 			if err != nil {
 				log.Printf("Error : %v \n", err)
 				break
