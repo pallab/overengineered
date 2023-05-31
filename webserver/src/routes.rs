@@ -1,16 +1,8 @@
 use std::sync::Arc;
-use actix::Addr;
-use actix_web::{get, web, error, post, App, HttpResponse, HttpServer, Responder, Result, Error, ResponseError};
+use actix_web::{get, web, error, post, HttpResponse, Responder};
 use actix_files::NamedFile;
-use actix_web::http::StatusCode;
-use serde::Deserialize;
-
-use tonic::{transport::Server, Request, Response, Status};
-
 use crate::{db, DbPool};
-use crate::config::RpcConfig;
 use crate::models::{NewUser, User};
-use crate::rpc_impl::rpc;
 
 pub async fn index() -> impl Responder {
     NamedFile::open_async("./ui/out/index.html").await.unwrap()

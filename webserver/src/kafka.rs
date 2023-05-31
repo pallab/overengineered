@@ -4,10 +4,9 @@ use rdkafka::ClientConfig;
 use rdkafka::config::FromClientConfig;
 use rdkafka::consumer::{BaseConsumer, Consumer};
 use rdkafka::error::KafkaResult;
-use rdkafka::producer::{FutureProducer, FutureRecord, Producer};
+use rdkafka::producer::{FutureProducer, FutureRecord};
 use rdkafka::producer::future_producer::OwnedDeliveryResult;
 use crate::config::KafkaConfig;
-use crate::stocks_rpc::StockPriceResponse;
 
 pub struct KafkaClient {
     pub(crate) config: KafkaConfig,
@@ -57,16 +56,6 @@ impl KafkaClient {
         let admin_options = AdminOptions::new();
 
         admin_client.create_topics([new_topic].iter(), &admin_options).await
-    }
-
-    pub async fn send(&mut self, p: StockPriceResponse) -> OwnedDeliveryResult {
-        self.producer.clone().unwrap_or_else(|| self.producer())
-            .send(
-                FutureRecord::to("g")
-                    .payload(&format!("{:?}", p))
-                    .key(&format!("{}-{}", p.ticker, p.timestamp)),
-                Duration::from_secs(0),
-            ).await
     }
 
     pub async fn send_word(&mut self, topic: &str, key: &str, value: &str, timestamp: i64) -> OwnedDeliveryResult {
