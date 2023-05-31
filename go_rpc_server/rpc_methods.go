@@ -32,13 +32,17 @@ func (s *serverImpl) GetWords(req *pb.GetWordsRequest, stream pb.Words_GetWordsS
 
 	go func(c chan pb.GetWordsResponse) {
 
+		count := 0
+
 		for {
 			p, err := RandomWord()
 			if err != nil {
 				log.Printf("Error : %v \n", err)
 				break
 			}
+			count++
 			c <- p
+			time.Sleep(time.Duration(5 * time.Second))
 		}
 
 		close(c)

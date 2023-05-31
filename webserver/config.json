@@ -11,6 +11,8 @@
     "port": 8089
   },
   "kafka": {
-    "server": "localhost:9094"
+    "server": "localhost:9094",
+    "topic" : "words",
+    "partitions" : 1
   }
 }

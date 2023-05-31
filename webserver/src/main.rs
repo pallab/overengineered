@@ -25,7 +25,7 @@ use diesel::r2d2::ConnectionManager;
 use diesel::MysqlConnection;
 use env_logger::Env;
 use log::*;
-use crate::kafka::Kafka;
+use crate::kafka::KafkaClient;
 
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 type PooledConn = r2d2::PooledConnection<ConnectionManager<MysqlConnection>>;
@@ -36,7 +36,7 @@ type DbError = Box<dyn std::error::Error + Send + Sync>;
 async fn main() -> std::io::Result<()> {
     println!("Starting the app. Environment variables are :");
 
-    std::env::set_var("RUST_LOG", "debug");
+    std::env::set_var("RUST_LOG", "info");
     env_logger::init_from_env(Env::default().default_filter_or("info"));
 
     // load the config file
@@ -80,6 +80,7 @@ async fn main() -> std::io::Result<()> {
             .service(Files::new("/", "./ui/out"))
     })
         .bind((config.server.host, config.server.port))?
+        .workers(4)
         .run()
         .await
 }

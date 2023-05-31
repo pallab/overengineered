@@ -1,3 +1,4 @@
 pub mod leader;
-mod worker;
 pub mod producer;
+pub mod stats;
+pub mod consumer;

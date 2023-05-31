@@ -8,12 +8,12 @@ use rand::distributions::Alphanumeric;
 use rand::Rng;
 use rdkafka::producer::{FutureProducer, FutureRecord};
 use tonic::IntoStreamingRequest;
-use crate::kafka::Kafka;
+use crate::kafka::KafkaClient;
 use crate::stocks_rpc::StockPriceRequest;
 
 pub struct LeaderActor {
     pub rpc_client: Option<StockMarketClient<Channel>>,
-    pub kafka_client: Option<Kafka>,
+    pub kafka_client: Option<KafkaClient>,
 }
 
 #[derive(Message, Debug)]
@@ -53,7 +53,7 @@ impl Handler<Ping> for LeaderActor {
         // we take the client out since we can not move it to the async bloc while its part of self
         // reason is the async future may outlive the actor itself
         let mut rpc_client = self.rpc_client.take().unwrap();
-        let kafka_client = self.kafka_client.take().unwrap();
+        let mut kafka_client = self.kafka_client.take().unwrap();
 
         Box::pin(
             async move {

@@ -21,7 +21,9 @@ pub struct RpcConfig {
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct KafkaConfig {
-    pub server : String
+    pub server : String,
+    pub topic : String,
+    pub partitions : i32,
 }
 
 #[derive(Debug, Default, Deserialize, Serialize)]

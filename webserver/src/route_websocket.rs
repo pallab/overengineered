@@ -1,12 +1,15 @@
+use std::collections::HashMap;
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use actix::{Actor, StreamHandler, Handler};
 use actix::prelude::*;
 use actix_web::{Error, HttpRequest, HttpResponse, web};
 use actix_web_actors::ws;
 use actix_web_actors::ws::{Message, ProtocolError};
 use log::{error, info};
+use crate::actors::consumer::ConsumerActor;
 use crate::actors::producer::ProducerActor;
+use crate::actors::stats::StatsActor;
 use crate::canvas::Tile;
 use crate::config::{KafkaConfig, RpcConfig};
 
@@ -20,11 +23,17 @@ pub struct PrintLine {
 
 #[derive(Message)]
 #[rtype(result = "()")]
-pub struct Setup;
+pub enum Setup {
+    Producer,
+    Consumer,
+}
 
 pub struct WebSocket {
     rpc_config: RpcConfig,
     kafka_config: KafkaConfig,
+    producer: Option<Addr<ProducerActor>>,
+    consumer: Option<Addr<ConsumerActor>>,
+    stats: Option<Addr<StatsActor>>,
 }
 
 impl Actor for WebSocket {
@@ -40,9 +49,18 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WebSocket {
             }
 
             Ok(ws::Message::Text(msg)) => {
+                info!("Received text to print : {}", msg);
                 if msg.starts_with(r"\print") {
-                    info!("Received text to print : {}", msg);
-                    ctx.address().do_send(PrintLine { line: msg.to_string(), count: 0 })
+                    // ctx.address().do_send(PrintLine { line: msg.to_string(), count: 0 })
+                    // if self.producer.is_none() {
+                    //     ctx.address().do_send(Setup)
+                    // }
+                } else if msg.starts_with(r"\setup") {
+                    match msg.strip_prefix(r"\setup").map(|s| s.trim()) {
+                        Some("producer") => ctx.address().do_send(Setup::Producer),
+                        Some("consumer") => ctx.address().do_send(Setup::Consumer),
+                        _ => ctx.text("Unknown command")
+                    };
                 } else {
                     error!("Msg not understood {}", msg)
                 }
@@ -51,15 +69,53 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WebSocket {
         }
     }
 }
+
 impl Handler<Setup> for WebSocket {
     type Result = ();
 
     fn handle(&mut self, msg: Setup, ctx: &mut Self::Context) -> Self::Result {
-        ProducerActor{
-            parent: ctx.address(),
-            rpc_config: Some(self.rpc_config.clone()),
-            kafka_config: Some(self.kafka_config.clone()),
-        }.start();
+        match msg {
+            Setup::Producer => {
+                if self.producer.is_none() {
+                    let a = Arbiter::new();
+                    let rpc_conf = self.rpc_config.clone();
+                    let kafk_config = self.kafka_config.clone();
+                    let self_add = ctx.address();
+
+                    a.spawn(
+                        async move {
+                            let stats = StatsActor {
+                                stats: HashMap::new(),
+                                last_updated_at: Instant::now(),
+                            }.start();
+                            let producer = ProducerActor {
+                                parent: self_add,
+                                stats_actor: stats,
+                                rpc_config: Some(rpc_conf),
+                                kafka_config: Some(kafk_config),
+                            }.start();
+                        }
+                    );
+
+                    // self.producer = Some(producer);
+                }
+            }
+            Setup::Consumer => {
+                if self.consumer.is_none() {
+                    let b = Arbiter::new();
+                    let kafk_config = self.kafka_config.clone();
+                    let self_add = ctx.address();
+                    b.spawn(
+                        async move {
+                            let consumer = ConsumerActor {
+                                parent: self_add,
+                                kafka_config: Some(kafk_config.clone()),
+                            }.start();
+                        }
+                    );
+                }
+            }
+        }
     }
 }
 
@@ -83,12 +139,19 @@ pub async fn ws_route(req: HttpRequest, rpc_config: web::Data<Arc<RpcConfig>>,
     info!("Websokcet req {:?}", req);
 
     let new_rpc_conf = RpcConfig { host: rpc_config.host.clone(), port: rpc_config.port };
-    let new_kafka_conf = KafkaConfig { server: kafka_config.server.clone() };
+    let new_kafka_conf = KafkaConfig {
+        server: kafka_config.server.clone(),
+        topic: kafka_config.topic.clone(),
+        partitions: kafka_config.partitions.clone(),
+    };
 
     let resp = ws::start(
         WebSocket {
             rpc_config: new_rpc_conf,
             kafka_config: new_kafka_conf,
+            producer: None,
+            consumer: None,
+            stats: None,
         }, &req, stream);
     resp
 }
