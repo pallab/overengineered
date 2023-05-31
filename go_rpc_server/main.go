@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"google.golang.org/grpc"
 	"log"
 	"net"
@@ -9,7 +8,6 @@ import (
 )
 
 func main() {
-	fmt.Println("Hello Gophers !! ")
 
 	listener, err := net.Listen("tcp", ":8089")
 
