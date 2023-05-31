@@ -67,16 +67,6 @@ async fn main() -> std::io::Result<()> {
             .service(routes::login)
             .service(routes::list_users)
             .route("/ws", web::get().to(route_websocket::ws_route))
-            .service(
-                web::scope("/stcoks")
-                    .service(routes::list_stocks)
-                    .service(routes::stock_price_ticks),
-            )
-            // .service(
-            //     web::scope("/ws")
-            //         .route("/data", web::get().to(route_websocket::ws_route))
-            // )
-
             .service(Files::new("/", "./ui/out"))
     })
         .bind((config.server.host, config.server.port))?
