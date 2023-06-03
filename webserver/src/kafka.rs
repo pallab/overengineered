@@ -96,7 +96,7 @@ impl KafkaConsumer {
             if let Some(r) = c.poll(t) {
                 info!("poll result - {:#?}", r)
             }
-            
+
             c.seek(&topic, 0, Offset::Beginning,
                    t)
                 .expect("Error : could not seek");

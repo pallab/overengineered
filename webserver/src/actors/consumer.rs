@@ -1,14 +1,27 @@
 
 use std::time::{ Instant, Duration};
 use actix::{Actor, AsyncContext, Context, Handler, WrapFuture};
-use log::info;
+use log::{error, info};
 use actix::prelude::*;
 use rdkafka::consumer::{CommitMode, Consumer, ConsumerContext, Rebalance};
 use rdkafka::message::{Headers, Message};
+use serde::Deserialize;
 use serde_json::*;
 use crate::config::KafkaConfig;
 use crate::kafka::{ KafkaConsumer};
 use crate::route_websocket::WebSocket;
+
+#[derive(Deserialize, Debug)]
+pub struct CharCount {
+    c : String,
+    count : i32
+}
+
+#[derive(Deserialize, Debug)]
+pub struct KafkaMessage {
+    key : String,
+    value : Vec<CharCount>
+}
 
 pub struct ConsumerActor {
     pub parent: Addr<WebSocket>,
@@ -36,24 +49,21 @@ impl Handler<PrintStats> for ConsumerActor {
     type Result = ResponseActFuture<Self, ()>;
 
     fn handle(&mut self, msg: PrintStats, ctx: &mut Self::Context) -> Self::Result {
-       info!("Hertbeat from consumer");
-        let kafka_config = self.kafka_config.take().unwrap();
+       let kafka_config = self.kafka_config.take().unwrap();
 
         Box::pin(
             async move {
-                info!("in async");
                 let consumer = KafkaConsumer::new(kafka_config.clone(), kafka_config.sink_topic, "g1".to_string());
-                info!("created kafka");
-
-                info!("2");
 
                 for record in consumer.consumer.iter() {
                     let m  = record.unwrap();
                     let v: &str = m.payload_view::<str>().unwrap().unwrap();
-
-                    info!("CONSUMER msg {:?} -> {}", m.key() , v)
+                    match serde_json::from_str::<Vec<CharCount>>(v) {
+                        Ok(r) => info!("CONSUMER msg {:?} -> {:?}", m.key() , r),
+                        Err(e) => error!("could not parse {} \n {}", e, v)
+                    }
                 }
-                info!("4")
+
             }
                 .into_actor(self)
         )
