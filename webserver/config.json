@@ -13,7 +13,7 @@
   "kafka": {
     "server": "localhost:9094",
     "source_topic" : "words",
-    "sink_topic" : "counts",
+    "sink_topic" : "letter_counts",
     "partitions" : 1
   }
 }

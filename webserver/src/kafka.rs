@@ -1,12 +1,15 @@
 use std::time::Duration;
+use log::info;
 use rdkafka::admin::{AdminClient, AdminOptions, TopicReplication, TopicResult};
 use rdkafka::client::DefaultClientContext;
 use rdkafka::ClientConfig;
 use rdkafka::config::FromClientConfig;
 use rdkafka::consumer::{BaseConsumer, Consumer};
 use rdkafka::error::KafkaResult;
+use rdkafka::Offset;
 use rdkafka::producer::{FutureProducer, FutureRecord};
 use rdkafka::producer::future_producer::OwnedDeliveryResult;
+use rdkafka::util::Timeout;
 use crate::config::KafkaConfig;
 
 pub struct KafkaAdmin {
@@ -25,8 +28,7 @@ pub struct KafkaConsumer {
 }
 
 impl KafkaAdmin {
-    pub fn new( config : KafkaConfig) -> Self {
-
+    pub fn new(config: KafkaConfig) -> Self {
         let mut client_config = ClientConfig::new();
         client_config.set("bootstrap.servers", &config.server);
         client_config.set("message.timeout.ms", "5000");
@@ -34,10 +36,10 @@ impl KafkaAdmin {
         let client = AdminClient::from_config(&client_config)
             .ok();
 
-       Self {config, client}
+        Self { config, client }
     }
 
-    pub async fn create_topic(&self, topic : &str) -> KafkaResult<Vec<TopicResult>> {
+    pub async fn create_topic(&self, topic: &str) -> KafkaResult<Vec<TopicResult>> {
         let new_topic = rdkafka::admin::NewTopic::new(
             topic, self.config.partitions, TopicReplication::Fixed(3),
         );
@@ -55,7 +57,7 @@ impl KafkaAdmin {
 }
 
 impl KafkaProducer {
-    pub fn new( config: KafkaConfig) -> Self {
+    pub fn new(config: KafkaConfig) -> Self {
         let producer: FutureProducer = ClientConfig::new()
             .set("bootstrap.servers", &config.server)
             .set("message.timeout.ms", "5000")
@@ -85,10 +87,21 @@ impl KafkaConsumer {
             .create()
             .ok();
 
-        consumer.as_ref().map(|c| {
-            c.subscribe(&[&topic])
-        });
+        if let Some(c) = consumer.as_ref() {
+            let t = Timeout::After(Duration::from_secs(10));
+            c.subscribe(&[&topic]).expect("Error : could no subscribe");
 
-        Self {config, consumer: consumer.unwrap() }
+            // required because the partition is assigned to this consumer only after a poll
+            // otherwise the seek will fail
+            if let Some(r) = c.poll(t) {
+                info!("poll result - {:#?}", r)
+            }
+            
+            c.seek(&topic, 0, Offset::Beginning,
+                   t)
+                .expect("Error : could not seek");
+        }
+
+        Self { config, consumer: consumer.unwrap() }
     }
 }
