@@ -7,7 +7,8 @@ use actix_web::{Error, HttpRequest, HttpResponse, web};
 use actix_web_actors::ws;
 use actix_web_actors::ws::{Message, ProtocolError};
 use log::{error, info};
-use crate::actors::consumer::ConsumerActor;
+use serde::Serialize;
+use crate::actors::consumer::{CharCount, ConsumerActor};
 use crate::actors::producer::ProducerActor;
 use crate::actors::stats::StatsActor;
 use crate::canvas::Tile;
@@ -26,6 +27,12 @@ pub struct PrintLine {
 pub enum Setup {
     Producer,
     Consumer,
+}
+
+#[derive(Message, Serialize)]
+#[rtype(result = "()")]
+pub struct CharMetrics {
+    pub counts: Vec<CharCount>,
 }
 
 pub struct WebSocket {
@@ -51,10 +58,6 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WebSocket {
             Ok(ws::Message::Text(msg)) => {
                 info!("Received text to print : {}", msg);
                 if msg.starts_with(r"\print") {
-                    // ctx.address().do_send(PrintLine { line: msg.to_string(), count: 0 })
-                    // if self.producer.is_none() {
-                    //     ctx.address().do_send(Setup)
-                    // }
                 } else if msg.starts_with(r"\setup") {
                     match msg.strip_prefix(r"\setup").map(|s| s.trim()) {
                         Some("producer") => ctx.address().do_send(Setup::Producer),
@@ -96,8 +99,6 @@ impl Handler<Setup> for WebSocket {
                             }.start();
                         }
                     );
-
-                    // self.producer = Some(producer);
                 }
             }
             Setup::Consumer => {
@@ -133,6 +134,13 @@ impl Handler<PrintLine> for WebSocket {
     }
 }
 
+impl Handler<CharMetrics> for WebSocket {
+    type Result = ();
+
+    fn handle(&mut self, msg: CharMetrics, ctx: &mut Self::Context) -> Self::Result {
+        ctx.text(serde_json::to_string(&msg).unwrap());
+    }
+}
 
 pub async fn ws_route(req: HttpRequest, rpc_config: web::Data<Arc<RpcConfig>>,
                       kafka_config: web::Data<Arc<KafkaConfig>>, stream: web::Payload) -> Result<HttpResponse, Error> {
@@ -142,7 +150,7 @@ pub async fn ws_route(req: HttpRequest, rpc_config: web::Data<Arc<RpcConfig>>,
     let new_kafka_conf = KafkaConfig {
         server: kafka_config.server.clone(),
         source_topic: kafka_config.source_topic.clone(),
-        sink_topic : kafka_config.sink_topic.clone(),
+        sink_topic: kafka_config.sink_topic.clone(),
         partitions: kafka_config.partitions.clone(),
     };
 
