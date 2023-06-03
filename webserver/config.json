@@ -12,7 +12,8 @@
   },
   "kafka": {
     "server": "localhost:9094",
-    "topic" : "words",
+    "source_topic" : "words",
+    "sink_topic" : "counts",
     "partitions" : 1
   }
 }

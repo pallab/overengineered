@@ -23,7 +23,6 @@ use diesel::r2d2::ConnectionManager;
 use diesel::MysqlConnection;
 use env_logger::Env;
 use log::*;
-use crate::kafka::KafkaClient;
 
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 type PooledConn = r2d2::PooledConnection<ConnectionManager<MysqlConnection>>;

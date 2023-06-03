@@ -7,7 +7,7 @@ use rdkafka::consumer::{CommitMode, Consumer, ConsumerContext, Rebalance};
 use rdkafka::message::{Headers, Message};
 use serde_json::*;
 use crate::config::KafkaConfig;
-use crate::kafka::KafkaClient;
+use crate::kafka::{ KafkaConsumer};
 use crate::route_websocket::WebSocket;
 
 pub struct ConsumerActor {
@@ -42,12 +42,12 @@ impl Handler<PrintStats> for ConsumerActor {
         Box::pin(
             async move {
                 info!("in async");
-                let mut kafka = KafkaClient { config: kafka_config, producer: None };
+                let consumer = KafkaConsumer::new(kafka_config.clone(), kafka_config.sink_topic, "g1".to_string());
                 info!("created kafka");
-                let consumer = kafka.consumer("1".to_string());
+
                 info!("2");
 
-                for record in consumer.iter() {
+                for record in consumer.consumer.iter() {
                     let m  = record.unwrap();
                     let v: &str = m.payload_view::<str>().unwrap().unwrap();
 

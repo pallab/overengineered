@@ -5,7 +5,7 @@ use actix::prelude::*;
 use rdkafka::producer::{FutureProducer, FutureRecord};
 use crate::actors::stats::{StatsActor, WordsCount};
 use crate::config::{KafkaConfig, RpcConfig};
-use crate::kafka::KafkaClient;
+use crate::kafka::{KafkaAdmin, KafkaProducer};
 use crate::route_websocket::WebSocket;
 use crate::words_rpc_impl::WordsRpc;
 
@@ -59,14 +59,16 @@ impl Handler<StartPoll> for ProducerActor {
 
         Box::pin(
             async move {
-                let mut kafka = KafkaClient { config: kafka_config, producer: None };
+                // let mut kafka = KafkaClient { config: kafka_config, producer: None };
                 let mut rpc = WordsRpc::new_client(
                     rpc_config.host.as_str(), rpc_config.port)
                     .await.unwrap();
                 self_addr.do_send(Status { msg: "Created a kafka and rpc clients".to_string() });
 
                 // create the kafka topic
-                let res = kafka.create_topic().await;
+                let admin_client = KafkaAdmin::new(kafka_config.clone());
+                let res = admin_client.create_topic(kafka_config.source_topic.as_str()).await;
+
                 match res {
                     Ok(r) => {
                         info!("created a new topic {:#?}",r);
@@ -78,11 +80,12 @@ impl Handler<StartPoll> for ProducerActor {
                 let mut words_stream = WordsRpc::get_words_stream(&mut rpc).await;
 
                 let mut counts = 0;
+                let producer = KafkaProducer::new(kafka_config.clone());
 
                 while let Some(p) = &mut words_stream.message().await.unwrap_or(None) {
                     counts += 1;
 
-                    let resp = kafka.send_word(
+                    let resp = producer.send_word(
                         &topic,
                         &p.timestamp.to_string(),
                         &p.word,

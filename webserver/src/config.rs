@@ -22,7 +22,8 @@ pub struct RpcConfig {
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct KafkaConfig {
     pub server : String,
-    pub topic : String,
+    pub source_topic: String,
+    pub sink_topic: String,
     pub partitions : i32,
 }
 

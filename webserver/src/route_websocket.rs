@@ -141,7 +141,8 @@ pub async fn ws_route(req: HttpRequest, rpc_config: web::Data<Arc<RpcConfig>>,
     let new_rpc_conf = RpcConfig { host: rpc_config.host.clone(), port: rpc_config.port };
     let new_kafka_conf = KafkaConfig {
         server: kafka_config.server.clone(),
-        topic: kafka_config.topic.clone(),
+        source_topic: kafka_config.source_topic.clone(),
+        sink_topic : kafka_config.sink_topic.clone(),
         partitions: kafka_config.partitions.clone(),
     };
 
