@@ -29,3 +29,7 @@ Umm. Maybe. :)
 
 ### Actors
 I love Akka actors. So I thought I'll find something similar for rust. I found a couple, there is riker which is heavily inspired by Akka but seems almost dead. And there is Actix, which is still actively developed. Compared to Akka actix seems limited in feature and very hard to work with. Specially the async rpc call I made in the handler pushed my stress level through the roof for a good part of the day till midnight when I found a workable compromise. 
+
+### UI
+https://s4ch1.hashnode.dev/how-to-create-pixel-art-with-css
+https://github.com/fayez-nazzal/ace-pixels
