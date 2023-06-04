@@ -2,8 +2,9 @@ package overengineered
 
 import org.apache.log4j.Logger
 import org.apache.log4j.Level
-import org.apache.spark.sql.{ SparkSession}
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions._
+import org.apache.spark.sql.streaming.Trigger
 import org.apache.spark.sql.types.DataTypes
 
 import java.util.UUID
@@ -30,6 +31,7 @@ object Main {
       .option("kafka.bootstrap.servers", "localhost:9094")
       .option("subscribe", "words")
       .option("startingOffsets", "earliest")
+      .option("failOnDataLoss", false)
       .load()
       .selectExpr("cast(value as string)")
       .as[String]
@@ -55,6 +57,7 @@ object Main {
       .writeStream
       .outputMode("complete")
       .format("kafka")
+      .trigger(Trigger.ProcessingTime("2 seconds"))
       .option("kafka.bootstrap.servers", "localhost:9094")
       .option("topic", "letter_counts")
       .option("checkpointLocation", checkpointAt)

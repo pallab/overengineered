@@ -39,7 +39,7 @@ impl Actor for ProducerActor {
 
     fn started(&mut self, ctx: &mut Self::Context) {
         info!("ProducerActor is started {:?}", ctx.address());
-        ctx.address().do_send(StartPoll);
+        ctx.notify(StartPoll);
     }
 
     fn stopped(&mut self, ctx: &mut Self::Context) {
@@ -94,6 +94,9 @@ impl Handler<StartPoll> for ProducerActor {
                         error!("Could not send : {:?} - err : {:?}", p, resp.err())
                     } else {
                         debug!("Successful send {counts} {:?}", resp)
+                    }
+                    if counts % 100 == 0 {
+                        info!("Producer words count : {}", counts)
                     }
                 }
 

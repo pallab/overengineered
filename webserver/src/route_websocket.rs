@@ -47,7 +47,7 @@ impl Handler<CharMetrics> for WebSocket {
     type Result = ();
 
     fn handle(&mut self, msg: CharMetrics, ctx: &mut Self::Context) -> Self::Result {
-        info!("received metrics at socket {:#?}", msg);
+        debug!("received metrics at socket {:#?}", msg);
         ctx.text(serde_json::to_string(&msg).unwrap());
     }
 }

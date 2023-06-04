@@ -42,7 +42,7 @@ func (s *serverImpl) GetWords(req *pb.GetWordsRequest, stream pb.Words_GetWordsS
 			}
 			count++
 			c <- p
-			time.Sleep(time.Duration(5 * time.Second))
+			time.Sleep(time.Duration(50 * time.Millisecond))
 		}
 
 		close(c)

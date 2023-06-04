@@ -42,7 +42,7 @@ impl KafkaAdmin {
     pub async fn create_topic(&self, topics: Vec<String>) -> KafkaResult<Vec<TopicResult>> {
         let new_topics: Vec<NewTopic> = topics.iter().map(|topic| {
             NewTopic::new(
-                topic, self.config.partitions, TopicReplication::Fixed(3),
+                topic, self.config.partitions, TopicReplication::Fixed(1),
             )
         }).collect();
 

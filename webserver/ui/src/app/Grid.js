@@ -24,7 +24,7 @@ const Grid = () => {
 
     Array.from(line).forEach((c, i) => {
       let count = cobj[c];
-      let fill_fraction = count * 1.0 / 600;
+      let fill_fraction = count * 1.0 / 80;
 
       let pixels = getFilledPixels(c, fill_fraction);
       grid.push(<Tile key={i} id={i} pixelDefs={pixels} />);
