@@ -6,14 +6,10 @@ mod schema;
 mod actors;
 mod kafka;
 mod route_websocket;
-mod canvas;
-mod letters;
 mod words_rpc_impl;
 mod words_rpc;
 
-use std::sync::{Arc, Mutex};
-use actix::Actor;
-use actix_cors::Cors;
+use std::sync::{Arc};
 use actix_files::Files;
 use crate::config::load_config;
 use actix_web::{App, HttpServer, web};
@@ -64,7 +60,7 @@ async fn main() -> std::io::Result<()> {
         Err(e) => error!("failed to create the topic {}", e)
     }
 
-    let producer = ProducerActor::start(config.rpc, config.kafka.clone());
+    let _producer = ProducerActor::start(config.rpc, config.kafka.clone());
     let consumer = Arc::new(ConsumerActor::start(config.kafka));
 
     HttpServer::new(move || {

@@ -52,7 +52,7 @@ impl ConsumerActor {
 impl Actor for ConsumerActor {
     type Context = Context<Self>;
 
-    fn started(&mut self, ctx: &mut Self::Context) {
+    fn started(&mut self, _ctx: &mut Self::Context) {
         info!("Consumer actor started");
     }
 }
@@ -82,7 +82,7 @@ impl Handler<PollResult> for ConsumerActor {
 impl Handler<PollKafka> for ConsumerActor {
     type Result = ResponseActFuture<Self, ()>;
 
-    fn handle(&mut self, msg: PollKafka, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, _msg: PollKafka, ctx: &mut Self::Context) -> Self::Result {
         let websockets = self.websockets.clone();
         let self_addr = ctx.address();
         let kafka_client = self.kafka_client.clone();

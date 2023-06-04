@@ -4,7 +4,7 @@ use actix::prelude::*;
 use actix_web::{Error, HttpRequest, HttpResponse, web};
 use actix_web_actors::ws;
 use actix_web_actors::ws::{Message, ProtocolError};
-use log::{error, info};
+use log::{error, info, debug};
 use serde::Serialize;
 use crate::actors::consumer::{CharCount, ConsumerActor, RegisterWebsocket};
 

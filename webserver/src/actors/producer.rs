@@ -2,8 +2,7 @@ use actix::{Actor, AsyncContext, Context, Handler, Message, WrapFuture};
 use log::{debug, error, info};
 use actix::prelude::*;
 use crate::config::{KafkaConfig, RpcConfig};
-use crate::kafka::{KafkaAdmin, KafkaProducer};
-use crate::route_websocket::WebSocket;
+use crate::kafka::{ KafkaProducer};
 use crate::words_rpc_impl::WordsRpc;
 
 pub struct ProducerActor {
@@ -50,7 +49,7 @@ impl Actor for ProducerActor {
 impl Handler<Status> for ProducerActor {
     type Result = ();
 
-    fn handle(&mut self, msg: Status, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: Status, _ctx: &mut Self::Context) -> Self::Result {
         info!("STATUS : {}", msg.msg);
     }
 }
@@ -58,7 +57,7 @@ impl Handler<Status> for ProducerActor {
 impl Handler<StartPoll> for ProducerActor {
     type Result = ResponseActFuture<Self, ()>;
 
-    fn handle(&mut self, msg: StartPoll, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, _msg: StartPoll, ctx: &mut Self::Context) -> Self::Result {
         info!("received ping");
         let topic = "words";
         let kafka_config = self.kafka_config.take().unwrap();
@@ -67,13 +66,11 @@ impl Handler<StartPoll> for ProducerActor {
 
         Box::pin(
             async move {
-                // let mut kafka = KafkaClient { config: kafka_config, producer: None };
+
                 let mut rpc = WordsRpc::new_client(
                     rpc_config.host.as_str(), rpc_config.port)
                     .await.unwrap();
                 self_addr.do_send(Status { msg: "Created a kafka and rpc clients".to_string() });
-
-                // create the kafka topic
 
                 let mut words_stream = WordsRpc::get_words_stream(&mut rpc).await;
 

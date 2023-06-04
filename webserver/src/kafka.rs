@@ -1,12 +1,10 @@
 use std::time::Duration;
 use log::info;
 use rdkafka::admin::{AdminClient, AdminOptions, NewTopic, TopicReplication, TopicResult};
-use rdkafka::client::DefaultClientContext;
 use rdkafka::ClientConfig;
 use rdkafka::config::FromClientConfig;
 use rdkafka::consumer::{BaseConsumer, Consumer};
 use rdkafka::error::KafkaResult;
-use rdkafka::Offset;
 use rdkafka::producer::{FutureProducer, FutureRecord};
 use rdkafka::producer::future_producer::OwnedDeliveryResult;
 use rdkafka::util::Timeout;
@@ -14,29 +12,19 @@ use crate::config::KafkaConfig;
 
 pub struct KafkaAdmin {
     pub(crate) config: KafkaConfig,
-    pub(crate) client: Option<AdminClient<DefaultClientContext>>,
 }
 
 pub struct KafkaProducer {
-    pub(crate) config: KafkaConfig,
     pub(crate) producer: FutureProducer,
 }
 
 pub struct KafkaConsumer {
-    pub(crate) config: KafkaConfig,
     pub(crate) consumer: BaseConsumer,
 }
 
 impl KafkaAdmin {
     pub fn new(config: KafkaConfig) -> Self {
-        let mut client_config = ClientConfig::new();
-        client_config.set("bootstrap.servers", &config.server);
-        client_config.set("message.timeout.ms", "5000");
-
-        let client = AdminClient::from_config(&client_config)
-            .ok();
-
-        Self { config, client }
+        Self { config }
     }
 
     pub async fn create_topic(&self, topics: Vec<String>) -> KafkaResult<Vec<TopicResult>> {
@@ -66,7 +54,7 @@ impl KafkaProducer {
             .create()
             .ok()
             .unwrap();
-        Self { config, producer }
+        Self {  producer }
     }
 
     pub async fn send_word(&self, topic: &str, key: &str, value: &str, timestamp: i64) -> OwnedDeliveryResult {
@@ -104,6 +92,6 @@ impl KafkaConsumer {
             //     .expect("Error : could not seek");
         }
 
-        Self { config, consumer: consumer.unwrap() }
+        Self { consumer: consumer.unwrap() }
     }
 }
