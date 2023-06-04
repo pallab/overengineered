@@ -1,14 +1,15 @@
 package main
 
 import (
-	"google.golang.org/grpc"
 	"log"
 	"net"
+
+	"google.golang.org/grpc"
 	pb "overengineered.com/rpc/words"
 )
 
 func main() {
-
+	log.Println("starting go rpc server ")
 	listener, err := net.Listen("tcp", ":8089")
 
 	if err != nil {

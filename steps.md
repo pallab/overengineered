@@ -36,12 +36,16 @@ unoptimized: true,
 
 ### build 
 ``
-docker build -t overengineered . --progress=basic
+docker build -t webserver . --progress=basic
+
+// rpc
+docker build -t rpc . --progress=basic
 ``
 
 ### run
 ``
-docker run -p 8080:8080  overengineered
+docker run -p 8080:8080  webserver
+docker run -p 8089:8089  rpc
 ``
 
 
