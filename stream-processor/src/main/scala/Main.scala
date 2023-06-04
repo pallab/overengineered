@@ -2,10 +2,11 @@ package overengineered
 
 import org.apache.log4j.Logger
 import org.apache.log4j.Level
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.connector.catalog.Column
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types.DataTypes
+import org.json4s.jackson.Json
 
 import java.util.UUID
 
@@ -37,7 +38,6 @@ object Main {
       .selectExpr("cast(value as string)")
       .as[String]
 
-
     val letterCounts = words
       .flatMap(_.toCharArray.map(_.toString))
       .groupBy("value")
@@ -49,8 +49,7 @@ object Main {
       .agg(collect_list("value").cast(DataTypes.StringType).as("value"))
       .withColumn("key", lit(java.time.LocalDateTime.now().toString))
 
-
-    //    val query = c.writeStream.outputMode("complete")
+    //    val query = x.writeStream.outputMode("complete")
     //      .format("console")
     //      .option("checkpointLocation", checkpointAt)
     //      .option("truncate", false)

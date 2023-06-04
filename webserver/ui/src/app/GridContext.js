@@ -1,18 +1,17 @@
-// A context that holds & change the value of paintColor
+'use client';
 
 import { Context, createContext, useContext, useEffect } from "react";
 import { useState } from "react";
 
 
 export const GridContext = createContext({
-  tiles: {},
-  setTiles : () => {}
+  counts: {}
 });
 
 
 export const GridContextProvider = ({ children }) => {
 
-  const [tiles, setTiles] = useState(null);
+  const [counts, setCounts] = useState([]);
   
   useEffect(() => {
     let conn = new WebSocket(
@@ -21,19 +20,12 @@ export const GridContextProvider = ({ children }) => {
     
       conn.onopen = (e) => {
         console.log(`connecting websocket`)
-        conn.send( "Hello World!")
+        conn.send( "\\print Hello World!")
     };
     
     conn.onmessage = (e) => {
         let data = JSON.parse(e.data);
-        
-        let tiles = [];
-
-        for (var p in data) {
-            tiles.push(data[p])
-        }
-
-        setTiles(tiles)
+        setCounts(data.counts)
     }    
 
     console.log(`Effect : GridContext`)
@@ -41,15 +33,15 @@ export const GridContextProvider = ({ children }) => {
 
 
   return (
-    <GridContext.Provider value={{ tiles, setTiles }}>
+    <GridContext.Provider value={{ counts }}>
       {children}
     </GridContext.Provider>
   );
 };
 
 export const useGridContext = () => {
-  const { tiles, setTiles } = useContext(GridContext)
+  const { counts } = useContext(GridContext)
   return {
-    tiles, setTiles
+    counts
   }
 };

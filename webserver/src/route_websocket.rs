@@ -58,6 +58,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WebSocket {
             Ok(ws::Message::Text(msg)) => {
                 info!("Received text to print : {}", msg);
                 if msg.starts_with(r"\print") {
+                    ctx.address().do_send(Setup::Consumer)
                 } else if msg.starts_with(r"\setup") {
                     match msg.strip_prefix(r"\setup").map(|s| s.trim()) {
                         Some("producer") => ctx.address().do_send(Setup::Producer),

@@ -4,13 +4,13 @@ use log::{error, info};
 use actix::prelude::*;
 use rdkafka::consumer::{CommitMode, Consumer, ConsumerContext, Rebalance};
 use rdkafka::message::{Headers, Message};
-use serde::Deserialize;
+use serde::{Serialize, Deserialize};
 use serde_json::*;
 use crate::config::KafkaConfig;
 use crate::kafka::{KafkaConsumer};
 use crate::route_websocket::{CharMetrics, WebSocket};
 
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct CharCount {
     c: String,
     count: i32,
@@ -40,7 +40,7 @@ impl Handler<StartConsumer> for ConsumerActor {
 
     fn handle(&mut self, msg: StartConsumer, ctx: &mut Self::Context) -> Self::Result {
         let kafka_config = self.kafka_config.take().unwrap();
-
+        let parent = self.parent.clone();
         Box::pin(
             async move {
                 let consumer = KafkaConsumer::new(kafka_config.clone(), kafka_config.sink_topic, "g1".to_string());
@@ -50,7 +50,7 @@ impl Handler<StartConsumer> for ConsumerActor {
                     let v: &str = m.payload_view::<str>().unwrap().unwrap();
                     match serde_json::from_str::<Vec<CharCount>>(v) {
                         Ok(r) => {
-                            self.parent.do_send(CharMetrics{counts : r});
+                            parent.do_send(CharMetrics{counts : r});
                             // info!("CONSUMER msg {:?} -> {:?}", m.key() , r)
                         },
                         Err(e) => error!("could not parse {} \n {}", e, v)
