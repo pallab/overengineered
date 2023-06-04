@@ -23,6 +23,9 @@ use diesel::r2d2::ConnectionManager;
 use diesel::MysqlConnection;
 use env_logger::Env;
 use log::*;
+use crate::actors::consumer::ConsumerActor;
+use crate::actors::producer::ProducerActor;
+use crate::kafka::KafkaAdmin;
 
 type DbPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 type PooledConn = r2d2::PooledConnection<ConnectionManager<MysqlConnection>>;
@@ -49,8 +52,20 @@ async fn main() -> std::io::Result<()> {
         .build(manager)
         .expect("database URL should be valid"));
 
-    let rpc_config = Arc::new(config.rpc);
-    let kafka_config = Arc::new(config.kafka);
+    let rpc_config = Arc::new(config.rpc.clone());
+    let kafka_config = Arc::new(config.kafka.clone());
+
+    let admin_client = KafkaAdmin::new(config.kafka.clone());
+    let res = admin_client.create_topic(
+        vec![kafka_config.source_topic.clone(), kafka_config.sink_topic.clone()]).await;
+
+    match res {
+        Ok(r) => info!("created a new topic {:#?}",r),
+        Err(e) => error!("failed to create the topic {}", e)
+    }
+
+    let producer = ProducerActor::start(config.rpc, config.kafka.clone());
+    let consumer = Arc::new(ConsumerActor::start(config.kafka));
 
     HttpServer::new(move || {
         //let cors = Cors::default().allow_any_origin();
@@ -60,6 +75,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::new(Arc::clone(&rpc_config)))
             .app_data(web::Data::new(Arc::clone(&kafka_config)))
+            .app_data(web::Data::new(Arc::clone(&consumer)))
             .service(web::resource("/").to(routes::index))
             .service(routes::login)
             .service(routes::list_users)

@@ -1,6 +1,6 @@
 use std::time::Duration;
 use log::info;
-use rdkafka::admin::{AdminClient, AdminOptions, TopicReplication, TopicResult};
+use rdkafka::admin::{AdminClient, AdminOptions, NewTopic, TopicReplication, TopicResult};
 use rdkafka::client::DefaultClientContext;
 use rdkafka::ClientConfig;
 use rdkafka::config::FromClientConfig;
@@ -39,10 +39,12 @@ impl KafkaAdmin {
         Self { config, client }
     }
 
-    pub async fn create_topic(&self, topic: &str) -> KafkaResult<Vec<TopicResult>> {
-        let new_topic = rdkafka::admin::NewTopic::new(
-            topic, self.config.partitions, TopicReplication::Fixed(3),
-        );
+    pub async fn create_topic(&self, topics: Vec<String>) -> KafkaResult<Vec<TopicResult>> {
+        let new_topics: Vec<NewTopic> = topics.iter().map(|topic| {
+            NewTopic::new(
+                topic, self.config.partitions, TopicReplication::Fixed(3),
+            )
+        }).collect();
 
         let mut client_config = ClientConfig::new();
         client_config.set("bootstrap.servers", &self.config.server);
@@ -52,7 +54,7 @@ impl KafkaAdmin {
             .ok().unwrap();
         let admin_options = AdminOptions::new();
 
-        admin_client.create_topics([new_topic].iter(), &admin_options).await
+        admin_client.create_topics(new_topics.iter(), &admin_options).await
     }
 }
 
@@ -97,9 +99,9 @@ impl KafkaConsumer {
                 info!("poll result - {:#?}", r)
             }
 
-            c.seek(&topic, 0, Offset::Beginning,
-                   t)
-                .expect("Error : could not seek");
+            // c.seek(&topic, 0, Offset::Beginning,
+            //        t)
+            //     .expect("Error : could not seek");
         }
 
         Self { config, consumer: consumer.unwrap() }

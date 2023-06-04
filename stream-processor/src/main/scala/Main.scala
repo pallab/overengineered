@@ -2,17 +2,13 @@ package overengineered
 
 import org.apache.log4j.Logger
 import org.apache.log4j.Level
-import org.apache.spark.sql.{Row, SparkSession}
-import org.apache.spark.sql.connector.catalog.Column
+import org.apache.spark.sql.{ SparkSession}
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types.DataTypes
-import org.json4s.jackson.Json
 
 import java.util.UUID
 
 object Main {
-  case class CharCounts(c: String, count: Long)
-
   def main(args: Array[String]): Unit = {
     println("Hello world!")
     Logger.getLogger("org").setLevel(Level.ERROR)
