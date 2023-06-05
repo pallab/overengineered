@@ -11,8 +11,14 @@ import java.util.UUID
 
 object Main {
   def main(args: Array[String]): Unit = {
-    println("Hello world!")
+    val kafka = scala.sys.env.getOrElse("KAFKA_SERVER", "localhost:9092")
+    val topicSource = scala.sys.env.getOrElse("TOPIC_SOURCE", "words")
+    val topicSink = scala.sys.env.getOrElse("TOPIC_SINK", "letter_counts")
+
+    println(s"Starting Streamer. \nkafka : $kafka \ntopic : $topicSource -> $topicSink")
+
     Logger.getLogger("org").setLevel(Level.ERROR)
+
     val checkpointAt = "/tmp/spark-checkpoint" + UUID.randomUUID()
 
     val spark = SparkSession.builder()
@@ -28,8 +34,8 @@ object Main {
     import spark.implicits._
 
     val words = spark.readStream.format("kafka")
-      .option("kafka.bootstrap.servers", "localhost:9094")
-      .option("subscribe", "words")
+      .option("kafka.bootstrap.servers", kafka)
+      .option("subscribe", topicSource)
       .option("startingOffsets", "earliest")
       .option("failOnDataLoss", false)
       .load()
@@ -47,19 +53,19 @@ object Main {
       .agg(collect_list("value").cast(DataTypes.StringType).as("value"))
       .withColumn("key", lit(java.time.LocalDateTime.now().toString))
 
-    //    val query = x.writeStream.outputMode("complete")
-    //      .format("console")
-    //      .option("checkpointLocation", checkpointAt)
-    //      .option("truncate", false)
-    //      .start()
+    //        val query = letterCounts.writeStream.outputMode("complete")
+    //          .format("console")
+    //          .option("checkpointLocation", checkpointAt)
+    //          .option("truncate", false)
+    //          .start()
 
     val query = letterCounts
       .writeStream
       .outputMode("complete")
       .format("kafka")
       .trigger(Trigger.ProcessingTime("2 seconds"))
-      .option("kafka.bootstrap.servers", "localhost:9094")
-      .option("topic", "letter_counts")
+      .option("kafka.bootstrap.servers", kafka)
+      .option("topic", topicSink)
       .option("checkpointLocation", checkpointAt)
       .start()
 

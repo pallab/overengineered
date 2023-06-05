@@ -49,6 +49,20 @@ services:
       - backend
     ports:
       - 9094:9094
+      - 9092:9092
+  streamer:
+    image: streamer
+    build:
+      context: stream-processor
+      dockerfile: Dockerfile
+    depends_on:
+      - kafka
+    environment:
+      - KAFKA_SERVER=kafka:9092
+      - TOPIC_SOURCE=words
+      - TOPIC_SINK=letter_counts
+    networks:
+      - backend
 
 
 networks:
