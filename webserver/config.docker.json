@@ -11,7 +11,7 @@
     "port": 8089
   },
   "kafka": {
-    "server": "kafka:9094",
+    "server": "kafka:9092",
     "source_topic" : "words",
     "sink_topic" : "letter_counts",
     "partitions" : 1

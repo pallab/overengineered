@@ -24,7 +24,7 @@ COPY ./Cargo.toml ./
 RUN cargo build --release
 
 COPY ./src ./src
-COPY config.docker.json ./
+#COPY config.docker.json ./
 RUN pwd && ls && ls -alth src
 RUN rm -r target
 RUN cargo build --release
@@ -57,7 +57,7 @@ EXPOSE 8080
 WORKDIR /app/webserver
 
 COPY --from=build /app/webserver/target/release/webserver ./
-COPY --from=build /app/webserver/config.docker.json ./
+COPY ./config.docker.json ./
 COPY --from=build /app/webserver/ui/out ./ui/out
 RUN pwd && ls -alth && ls ui/out
 
