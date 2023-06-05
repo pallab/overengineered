@@ -21,20 +21,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 55
-  webserver:
-    image: webserver
-    build:
-      context: webserver
-      dockerfile: Dockerfile
-    depends_on:
-      db:
-        condition: service_healthy
-    environment:
-      - DATABASE_URL=mysql://tenxdev:tenxpasswd@db:3306/overengineered
-    networks:
-      - backend
-    ports:
-      - 8080:8080
   kafka:
     image: bitnami/kafka:3.4.0
     environment:
@@ -50,13 +36,42 @@ services:
     ports:
       - 9094:9094
       - 9092:9092
+  grpc:
+    image: rpc
+    build:
+      context: go_rpc_server
+      dockerfile: Dockerfile
+    networks:
+      - backend
+    ports:
+      - 8089:8089
+  webserver:
+    image: webserver
+    build:
+      context: webserver
+      dockerfile: Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=mysql://tenxdev:tenxpasswd@db:3306/overengineered
+    networks:
+      - backend
+    ports:
+      - 8080:8080
+    healthcheck:
+      test: curl localhost:8080
+      interval: 1s
+      timeout: 2s
+      retries: 55
   streamer:
     image: streamer
     build:
       context: stream-processor
       dockerfile: Dockerfile
     depends_on:
-      - kafka
+      webserver:
+        condition: service_healthy
     environment:
       - KAFKA_SERVER=kafka:9092
       - TOPIC_SOURCE=words

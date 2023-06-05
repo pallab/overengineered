@@ -40,12 +40,14 @@ docker build -t webserver . --progress=basic
 
 // rpc
 docker build -t rpc . --progress=basic
+docker build -t streamer . --progress=basic
 ``
 
 ### run
 ``
 docker run -p 8080:8080  webserver
 docker run -p 8089:8089  rpc
+docker run streamer
 ``
 
 

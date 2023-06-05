@@ -1,4 +1,6 @@
 ui/node_modules
+ui/out
+ui/.next
 target
 static
 ../.idea
