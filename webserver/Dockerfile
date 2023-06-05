@@ -45,7 +45,7 @@ WORKDIR /app/webserver
 RUN pwd && ls -alth ui/out && ls -alth src
 
 # create the release build
-FROM debian:buster
+FROM debian:bullseye
 RUN dpkg --print-architecture
 RUN apt-get update
 RUN apt-get -y install libmariadb3

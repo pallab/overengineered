@@ -1,5 +1,19 @@
 {
-  "host" : "0.0.0.0",
-  "port" : 8080,
-  "db_url" : "mysql://tenxdev:tenxpasswd@db:3306/overengineered"
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8080
+  },
+  "mysql": {
+    "db_url": "mysql://tenxdev:tenxpasswd@db:3306/overengineered"
+  },
+  "rpc": {
+    "host": "0.0.0.0",
+    "port": 8089
+  },
+  "kafka": {
+    "server": "kafka:9094",
+    "source_topic" : "words",
+    "sink_topic" : "letter_counts",
+    "partitions" : 1
+  }
 }
