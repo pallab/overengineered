@@ -63,6 +63,11 @@ services:
       - DATABASE_URL=mysql://tenxdev:tenxpasswd@db:3306/overengineered
       - BIND_HOST=0.0.0.0
       - BIND_PORT=8080
+      - RPC_ADDRESS=http://grpc:8089
+      - KAFKA_SERVERS=kafka:9092
+      - KAFKA_SOURCE=words
+      - KAFKA_SINK=letter_counts
+      - KAFKA_PARTITIONS=1
     networks:
       - backend
     ports:

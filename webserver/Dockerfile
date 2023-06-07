@@ -57,10 +57,8 @@ EXPOSE 8080
 WORKDIR /app/webserver
 
 COPY --from=build /app/webserver/target/release/webserver ./
-COPY ./config.docker.json ./
 COPY --from=build /app/webserver/ui/out ./ui/out
 RUN pwd && ls -alth && ls ui/out
 
 ENV RUST_BACKTRACE=full
-ENV CONFIG_FILE=config.docker.json
 CMD [ "./webserver" ]
