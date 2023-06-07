@@ -1,14 +1,14 @@
+
+use std::thread;
+use std::time::Duration;
 use actix::{Actor, AsyncContext, Context, Handler, Message, WrapFuture};
 use log::{debug, error, info};
 use actix::prelude::*;
-use crate::config::{KafkaConfig, RpcConfig};
+use crate::config::KafkaConfig;
 use crate::kafka::{ KafkaProducer};
 use crate::words_rpc_impl::WordsRpc;
 
-pub struct ProducerActor {
-    pub rpc_config: Option<RpcConfig>,
-    pub kafka_config: Option<KafkaConfig>,
-}
+pub struct ProducerActor;
 
 #[derive(Message, Debug)]
 #[rtype(result = "()")]
@@ -21,12 +21,9 @@ struct Status {
 struct StartPoll;
 
 impl ProducerActor {
-    pub fn start(rpc_conf: RpcConfig, kafka_config: KafkaConfig) -> bool {
+    pub fn start() -> bool {
         let a = Arbiter::new();
-        let producer = ProducerActor {
-            rpc_config: Some(rpc_conf),
-            kafka_config: Some(kafka_config),
-        };
+        let producer = ProducerActor {};
         a.spawn(async move {
             producer.start();
         })
@@ -39,6 +36,11 @@ impl Actor for ProducerActor {
     fn started(&mut self, ctx: &mut Self::Context) {
         info!("ProducerActor is started {:?}", ctx.address());
         ctx.notify(StartPoll);
+    }
+
+    fn stopping(&mut self, _: &mut Self::Context) -> Running {
+        info!("ProducerActor is stopping");
+        Running::Continue
     }
 
     fn stopped(&mut self, ctx: &mut Self::Context) {
@@ -59,45 +61,48 @@ impl Handler<StartPoll> for ProducerActor {
 
     fn handle(&mut self, _msg: StartPoll, ctx: &mut Self::Context) -> Self::Result {
         info!("received ping");
-        let topic = "words";
-        let kafka_config = self.kafka_config.take().unwrap();
-        let rpc_config = self.rpc_config.take().unwrap();
         let self_addr = ctx.address();
 
         Box::pin(
             async move {
 
-                let mut rpc = WordsRpc::new_client(
-                    rpc_config.host.as_str(), rpc_config.port)
-                    .await.unwrap();
-                self_addr.do_send(Status { msg: "Created a kafka and rpc clients".to_string() });
+                let rpc = WordsRpc::new_client().await;
 
-                let mut words_stream = WordsRpc::get_words_stream(&mut rpc).await;
+                if let Ok(mut rpc) = rpc {
 
-                let mut counts = 0;
-                let producer = KafkaProducer::new(kafka_config.clone());
+                    self_addr.do_send(Status { msg: "Created a kafka and rpc clients".to_string() });
 
-                while let Some(p) = &mut words_stream.message().await.unwrap_or(None) {
-                    counts += 1;
+                    let mut words_stream = WordsRpc::get_words_stream(&mut rpc).await;
 
-                    let resp = producer.send_word(
-                        &topic,
-                        &p.timestamp.to_string(),
-                        &p.word,
-                        p.timestamp as i64,
-                    ).await;
+                    let mut counts = 0;
+                    let producer = KafkaProducer::new();
 
-                    if resp.is_err() {
-                        error!("Could not send : {:?} - err : {:?}", p, resp.err())
-                    } else {
-                        debug!("Successful send {counts} {:?}", resp)
+                    while let Some(p) = &mut words_stream.message().await.unwrap_or(None) {
+                        counts += 1;
+
+                        let resp = producer.send_word(
+                            KafkaConfig::sink_topic().as_str(),
+                            &p.timestamp.to_string(),
+                            &p.word,
+                            p.timestamp as i64,
+                        ).await;
+
+                        if resp.is_err() {
+                            error!("Could not send : {:?} - err : {:?}", p, resp.err())
+                        } else {
+                            debug!("Successful send {counts} {:?}", resp)
+                        }
+                        if counts % 100 == 0 {
+                            info!("Producer words count : {}", counts)
+                        }
                     }
-                    if counts % 100 == 0 {
-                        info!("Producer words count : {}", counts)
-                    }
+
+                    info!("Total words saved {}", counts);
+                } else {
+                    error!("Could not connect to rpc endpoint. Retry in 1 sec ..");
+                    thread::sleep(Duration::from_secs(1));
+                    self_addr.do_send(StartPoll)
                 }
-
-                info!("Total words saved {}", counts);
             }
                 .into_actor(self)
         )

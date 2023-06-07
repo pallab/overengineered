@@ -36,11 +36,15 @@ services:
     ports:
       - 9094:9094
       - 9092:9092
+    logging:
+      driver: none
   grpc:
     image: rpc
     build:
       context: go_rpc_server
       dockerfile: Dockerfile
+    environment:
+      - BIND_ADDRESS=0.0.0.0:8089
     networks:
       - backend
     ports:
@@ -53,8 +57,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      grpc:
+      kafka:
     environment:
       - DATABASE_URL=mysql://tenxdev:tenxpasswd@db:3306/overengineered
+      - BIND_HOST=0.0.0.0
+      - BIND_PORT=8080
     networks:
       - backend
     ports:

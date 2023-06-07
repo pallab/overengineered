@@ -38,9 +38,9 @@ pub struct PollResult {
 }
 
 impl ConsumerActor {
-    pub fn start(kafka_config: KafkaConfig) -> Addr<ConsumerActor> {
-        let consumer = KafkaConsumer::new(kafka_config.clone(),
-                                          kafka_config.sink_topic,
+    pub fn start() -> Addr<ConsumerActor> {
+        let consumer = KafkaConsumer::new(
+                                          KafkaConfig::sink_topic(),
                                           "g1".to_string());
         ConsumerActor {
             websockets: vec![],

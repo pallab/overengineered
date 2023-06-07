@@ -10,9 +10,7 @@ use rdkafka::producer::future_producer::OwnedDeliveryResult;
 use rdkafka::util::Timeout;
 use crate::config::KafkaConfig;
 
-pub struct KafkaAdmin {
-    pub(crate) config: KafkaConfig,
-}
+pub struct KafkaAdmin ;
 
 pub struct KafkaProducer {
     pub(crate) producer: FutureProducer,
@@ -23,19 +21,16 @@ pub struct KafkaConsumer {
 }
 
 impl KafkaAdmin {
-    pub fn new(config: KafkaConfig) -> Self {
-        Self { config }
-    }
 
-    pub async fn create_topic(&self, topics: Vec<String>) -> KafkaResult<Vec<TopicResult>> {
+    pub async fn create_topic(topics: Vec<String>) -> KafkaResult<Vec<TopicResult>> {
         let new_topics: Vec<NewTopic> = topics.iter().map(|topic| {
             NewTopic::new(
-                topic, self.config.partitions, TopicReplication::Fixed(1),
+                topic, KafkaConfig::partitions(), TopicReplication::Fixed(1),
             )
         }).collect();
 
         let mut client_config = ClientConfig::new();
-        client_config.set("bootstrap.servers", &self.config.server);
+        client_config.set("bootstrap.servers", KafkaConfig::servers());
         client_config.set("message.timeout.ms", "5000");
 
         let admin_client = AdminClient::from_config(&client_config)
@@ -47,9 +42,9 @@ impl KafkaAdmin {
 }
 
 impl KafkaProducer {
-    pub fn new(config: KafkaConfig) -> Self {
+    pub fn new() -> Self {
         let producer: FutureProducer = ClientConfig::new()
-            .set("bootstrap.servers", &config.server)
+            .set("bootstrap.servers", KafkaConfig::servers())
             .set("message.timeout.ms", "5000")
             .create()
             .ok()
@@ -70,9 +65,9 @@ impl KafkaProducer {
 }
 
 impl KafkaConsumer {
-    pub fn new(config: KafkaConfig, topic: String, group_id: String) -> Self {
+    pub fn new(topic: String, group_id: String) -> Self {
         let consumer: Option<BaseConsumer> = ClientConfig::new()
-            .set("bootstrap.servers", &config.server)
+            .set("bootstrap.servers", KafkaConfig::servers())
             .set("group.id", group_id)
             .create()
             .ok();
